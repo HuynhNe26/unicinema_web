@@ -87,7 +87,7 @@ const NavbarAdmin = () => {
                 section: 'Quản lý quản trị',
                 items: [
                     { to: 'manage_admin', label: 'QUẢN LÝ QUẢN TRỊ VIÊN' },
-                    { to: 'create_admin', label: 'THÊM QUẢN TRỊ VIÊN' },
+                    { to: 'new_admin', label: 'THÊM QUẢN TRỊ VIÊN' },
                 ],
             },
             {
@@ -244,11 +244,11 @@ const NavbarAdmin = () => {
                     background: #EDEEF0;
                     border-radius: 10px;
                     padding: 10px;
-                    height: 850px;
+                    min-height: 850px;
                 }
 
                 .sidebar {
-                    width: 15%;
+                    width: 15,5%;
                     background: white;
                     padding: 20px;
                     border-radius: 10px;
@@ -300,7 +300,7 @@ const NavbarAdmin = () => {
                 }
 
                 .menu-items.expanded {
-                    max-height: 200px; /* Adjust based on content */
+                    max-height: 500px; /* Adjust based on content */
                 }
 
                 .menu-item {
@@ -389,8 +389,7 @@ const NavbarAdmin = () => {
                 }
 
                 .main_content {
-                    width: 1200px;
-                    max-width: 1200px;
+                    width: 1100px;
                     padding: 20px;
                     background: #FFFFFF;
                     border-radius: 10px;

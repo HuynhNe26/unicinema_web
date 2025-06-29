@@ -70,6 +70,16 @@ api.put('/logout-admin/:id', async (req, res) => {
     }
 });
 
+api.get('/manage_admin', async (req, res) => {
+    try {
+        const [rows] = await db.query('SELECT * FROM admin');
+        res.status(200).json(rows);
+    } catch (error) {
+        console.error('Error fetching admins:', error);
+        res.status(500).json({ message: 'Lỗi server khi lấy danh sách quản trị viên' });
+    }
+});
+
 api.listen(port, () => {
     console.log(`http://localhost:${port}`);
 });
