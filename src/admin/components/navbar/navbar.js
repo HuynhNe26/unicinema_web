@@ -56,7 +56,6 @@ const NavbarAdmin = () => {
             if (response.ok) {
                 AuthModel.logout();
                 localStorage.removeItem('hasShownLoginToast');
-                alert('Đăng xuất thành công!');
                 navigate('/admin/login');
             } else {
                 const data = await response.json();
@@ -107,11 +106,18 @@ const NavbarAdmin = () => {
             {
                 section: 'Quản lý phim',
                 items: [
-                    { to: 'create_product', label: 'THÊM PHIM' },
-                    { to: 'create_product_details', label: 'THÊM CHI TIẾT SẢN PHẨM' },
                     { to: 'manage_product', label: 'QUẢN LÝ PHIM' },
+                    { to: 'create_product', label: 'THÊM PHIM' },
+                    { to: 'create_productDetails', label: 'THÊM CHI TIẾT SẢN PHẨM' },
                     { to: 'manage_product', label: 'LỊCH PHIM' },
                     { to: 'manage_order_all', label: 'QUẢN LÝ COMMENT PHIM' },
+                ],
+            },
+            {
+                section: 'Quản lý rạp',
+                items: [
+                    { to: 'manage_theater', label: 'QUẢN LÝ RẠP' },
+                    { to: 'create_theater', label: 'THÊM RẠP' },
                 ],
             },
             {

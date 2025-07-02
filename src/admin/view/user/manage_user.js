@@ -39,12 +39,24 @@ export default function ManageUser() {
                         data.created_at = data.created_at.toDate();
                     }
 
+                    if (data.dateTimeMemberEnd && data.dateTimeMemberEnd instanceof Timestamp) {
+                        data.dateTimeMemberEnd = data.dateTimeMemberEnd.toDate();
+                    }
+                    if (data.dateTimeMemberStart && data.dateTimeMemberStart instanceof Timestamp) {
+                        data.dateTimeMemberStart = data.dateTimeMemberStart.toDate();
+                    }
+                    if (data.birthOfDate && data.birthOfDate instanceof Timestamp) {
+                        data.birthOfDate = data.birthOfDate.toDate();
+                    }
+                    
+
                     return {
                         id: doc.id,
                         ...data,
                     };
                 });
                 setUsers(usersData);
+
             } catch (err) {
                 console.error('Error fetching users:', err);
                 setError('Đã xảy ra lỗi khi tải danh sách người dùng.');
@@ -73,14 +85,13 @@ export default function ManageUser() {
                     <thead>
                         <tr>
                             <th>STT</th>
-                            <th>Đã mua</th>
+                            <th>Họ và tên</th>
                             <th>Ngày tạo</th>
                             <th>Ngày hết hạn thành viên</th>
                             <th>Ngày bắt đầu thành viên</th>
                             <th>Email</th>
-                            <th>Họ và tên</th>
-                            <th>ID Thành viên</th>
                             <th>Số điện thoại</th>
+                            <th>Hạng thành viên</th>
                             <th>Điểm</th>
                         </tr>
                     </thead>
@@ -88,14 +99,13 @@ export default function ManageUser() {
                         {users.map((user, index) => (
                             <tr key={user.id}>
                                 <td>{index + 1}</td>
-                                <td>{user.checkBuy ? 'Có' : 'Không'}</td>
+                                <td>{user.fullName || 'N/A'}</td>
                                 <td>{user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A'}</td>
                                 <td>{user.dateTimeMemberEnd ? new Date(user.dateTimeMemberEnd).toLocaleString() : 'N/A'}</td>
                                 <td>{user.dateTimeMemberStart ? new Date(user.dateTimeMemberStart).toLocaleString() : 'N/A'}</td>
                                 <td>{user.email || 'N/A'}</td>
-                                <td>{user.fullName || 'N/A'}</td>
+                                <td>{'0' + user.phoneNumberUser || 'N/A'}</td>
                                 <td>{user.idMemberShip || 'N/A'}</td>
-                                <td>{user.phoneNumberUser || 'N/A'}</td>
                                 <td>{user.pointUser || '0'}</td>
                             </tr>
                         ))}
