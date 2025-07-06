@@ -66,7 +66,7 @@ export default function ManageScreenRoom() {
                 const rooms = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setScreenRooms(rooms);
             } catch (error) {
-                console.error("Error fetching screen rooms:", error);
+                console.error("Lỗi lấy phòng chiếu:", error);
             }
         };
         fetchScreenRooms();
@@ -110,8 +110,8 @@ export default function ManageScreenRoom() {
                 setScreenRooms(screenRooms.filter(room => room.id !== id));
                 alert("Xóa phòng chiếu thành công!");
             } catch (error) {
-                console.error("Error deleting screen room:", error);
-                alert("Failed to delete screen room. Check console for details: " + error.message);
+                console.error("Lỗi xóa phòng chiếu:", error);
+                alert("Xóa phòng chiếu thất bại! Lỗi: " + error.message);
             }
         }
     };
@@ -198,7 +198,7 @@ export default function ManageScreenRoom() {
                     {screenRooms.map((room) => (
                         <div key={room.id} className="room-item">
                             <span>
-                                {room.nameScreenRoom} (ID: {room.idScreenRoom}) - {room.stateScreenRoom}
+                                {room.nameScreenRoom} (ID: {room.id}) - {room.stateScreenRoom}
                             </span>
                             <div>
                                 <button onClick={() => handleSelectScreenRoom(room.idScreenRoom)}>Xem Suất Chiếu</button>

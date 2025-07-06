@@ -132,6 +132,8 @@ const NavbarAdmin = () => {
                 items: [
                     { to: 'manage_gift', label: 'QUẢN LÝ QUÀ TẶNG' },
                     { to: 'create_gift', label: 'THÊM QUÀ TẶNG' },
+                    { to: 'manage_promotion', label: 'QUẢN LÝ KHUYẾN MÃI' },
+                    { to: 'create_promotion', label: 'TẠO KHUYẾN MÃI' },
                 ],
             },
             {
