@@ -13,6 +13,7 @@ import CreateTheater from '../admin/view/theater/create_theater';
 import CreateScreen from '../admin/view/screening/create_screen';
 import CreateScreenRoom from '../admin/view/screeningRoom/create_screenRoom';
 import ManageScreenRoom from '../admin/view/screeningRoom/manage_screenRoom';
+import CreateGift from '../admin/view/gift/create_gift';
 
 export default function Router() {
    
@@ -42,6 +43,10 @@ export default function Router() {
                     {/**Quản lý phòng chiếu */}
                     <Route path="manage_screenRoom" element={<ManageScreenRoom />} />
                     <Route path="create_screenRoom" element={<CreateScreenRoom />} />
+
+                    {/**Quản lý voucher */}
+                    <Route path="create_gift" element={<CreateGift />} />
+                    
 
                 </Route>
                 <Route path="*" element={<div>404 - Trang không tìm thấy</div>} />

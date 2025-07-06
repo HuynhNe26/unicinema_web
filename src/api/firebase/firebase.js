@@ -4,13 +4,13 @@ import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
-  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.REACT_APP_FIREBASE_APP_ID,
-  measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID
+  apiKey: "AIzaSyCmQ28yB0uCBOPa9dKbyWIYpH2gieJ3tWI",
+  authDomain: "unicinema-80396.firebaseapp.com",
+  projectId: "unicinema-80396",
+  storageBucket: "unicinema-80396.firebasestorage.app",
+  messagingSenderId: "503641676608",
+  appId: "1:503641676608:web:f35437aacdbef9c4c2f8a5",
+  measurementId: "G-N8SHR5E70L"
 };
 
 const app = initializeApp(firebaseConfig);

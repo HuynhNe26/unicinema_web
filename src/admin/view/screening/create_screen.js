@@ -58,10 +58,10 @@ const CreateScreen = () => {
     try {
       const querySnapshot = await getDocs(collection(db, "screening"));
       const count = querySnapshot.size;
-      return `idScreening${(count + 1).toString().padStart(6, '0')}`;
+      return `idScreening${(count + 1).toString().padStart(23, '0')}`;
     } catch (error) {
       console.error("Error generating screening ID:", error);
-      return `idScreening000001`;
+      return `idScreening000000000000000000000001`;
     }
   };
 
@@ -119,17 +119,6 @@ const CreateScreen = () => {
     }}>
       <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>TẠO SUẤT CHIẾU MỚI</h2>
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>ID Suất Chiếu:</label>
-          <input
-            type="text"
-            name="idScreening"
-            value={newScreen.idScreening}
-            readOnly
-            placeholder="Sẽ tự động tạo khi submit (từ 000001)"
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
-        </div>
         <div style={{ marginBottom: '15px' }}>
           <label style={{ display: 'block', marginBottom: '5px' }}>Ngày giờ bắt đầu:</label>
           <input
