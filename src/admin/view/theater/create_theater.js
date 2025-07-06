@@ -1,7 +1,207 @@
+import React, { useState, useEffect } from 'react';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, setDoc, doc, getCountFromServer } from 'firebase/firestore';
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCmQ28yB0uCBOPa9dKbyWIYpH2gieJ3tWI",
+  authDomain: "unicinema-80396.firebaseapp.com",
+  projectId: "unicinema-80396",
+  storageBucket: "unicinema-80396.firebasestorage.app",
+  messagingSenderId: "503641676608",
+  appId: "1:503641676608:web:f35437aacdbef9c4c2f8a5",
+  measurementId: "G-N8SHR5E70L"
+};
 
-export default function CreateTheater () {
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+console.log("Firebase initialized:", db);
+
+export default function CreateTheater() {
+    const [theater, setTheater] = useState({
+        idTheater: '',
+        addressTheater: '',
+        latitudeTheater: '',
+        longitudeTheater: '',
+        nameProvince: '',
+        nameTheater: ''
+    });
+
+    useEffect(() => {
+        const getNextTheaterId = async () => {
+            try {
+                const coll = collection(db, "theaters");
+                const snapshot = await getCountFromServer(coll);
+                const count = snapshot.data().count + 1;
+                const newId = `idTheater${String(count).padStart(3, '0')}`;
+                setTheater(prevState => ({ ...prevState, idTheater: newId }));
+            } catch (error) {
+                console.error("Error fetching count:", error);
+            }
+        };
+        getNextTheaterId();
+    }, []);
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setTheater(prevState => ({
+            ...prevState,
+            [name]: value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!theater.addressTheater || !theater.latitudeTheater || !theater.longitudeTheater || !theater.nameProvince || !theater.nameTheater) {
+            alert("Please fill all fields.");
+            return;
+        }
+        try {
+            const theaterData = { ...theater };
+            console.log("Submitting data with ID:", theaterData.idTheater);
+            await setDoc(doc(db, "theaters", theaterData.idTheater), theaterData);
+            console.log("Document written with ID: ", theaterData.idTheater);
+            alert("Theater added successfully!");
+
+            const coll = collection(db, "theaters");
+            const snapshot = await getCountFromServer(coll);
+            const newCount = snapshot.data().count + 1;
+            const newId = `idTheater${String(newCount).padStart(3, '0')}`;
+            setTheater({
+                idTheater: newId,
+                addressTheater: '',
+                latitudeTheater: '',
+                longitudeTheater: '',
+                nameProvince: '',
+                nameTheater: ''
+            });
+        } catch (error) {
+            console.error("Error adding theater: ", error.message);
+            alert("Failed to add theater. Check console for details: " + error.message);
+        }
+    };
+
+    const provinces = [
+        "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu", "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương",
+        "Bình Phước", "Bình Thuận", "Cà Mau", "Cần Thơ", "Cao Bằng", "Đà Nẵng", "Đắk Lắk", "Đắk Nông", "Điện Biên", "Đồng Nai",
+        "Đồng Tháp", "Gia Lai", "Hà Giang", "Hà Nam", "Hà Nội", "Hà Tĩnh", "Hải Dương", "Hải Phòng", "Hậu Giang", "Hòa Bình",
+        "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu", "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định",
+        "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Phú Yên", "Quảng Bình", "Quảng Nam", "Quảng Ngãi", "Quảng Ninh",
+        "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang",
+        "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái", "TP. Hồ Chí Minh"
+    ];
+
     return (
-        <div></div>
-    )
+        <>
+            <style>
+                {`
+                    .create-theater-container {
+                        padding: 20px;
+                        max-width: 500px;
+                        margin: 0 auto;
+                    }
+
+                    h2 {
+                        text-align: center;
+                        margin-bottom: 20px;
+                    }
+
+                    .form-group {
+                        margin-bottom: 15px;
+                    }
+
+                    .form-group label {
+                        display: block;
+                        margin-bottom: 5px;
+                    }
+
+                    .form-group input, .form-group select {
+                        width: 100%;
+                        padding: 8px;
+                        box-sizing: border-box;
+                    }
+
+                    button {
+                        width: 100%;
+                        padding: 10px;
+                        background-color: #1da1f2;
+                        color: white;
+                        border: none;
+                        cursor: pointer;
+                    }
+
+                    button:hover {
+                        background-color: #1a91da;
+                    }
+                `}
+            </style>
+            <div className="create-theater-container">
+                <h2>THÊM RẠP PHIM</h2>
+                <form onSubmit={handleSubmit}>
+                    {/* <div className="form-group">
+                        <label>ID Rạp:</label>
+                        <input
+                            type="text"
+                            name="idTheater"
+                            value={theater.idTheater}
+                            readOnly
+                        />
+                    </div> */}
+                    <div className="form-group">
+                        <label>Địa chỉ:</label>
+                        <input
+                            type="text"
+                            name="addressTheater"
+                            value={theater.addressTheater}
+                            onChange={handleChange}
+                            placeholder="e.g., Tầng 4, Pico Plaza, 20 Công Hòa, P.12, Q.Tân Bình, TP.HCM, Việt Nam"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Kinh độ:</label>
+                        <input
+                            type="text"
+                            name="latitudeTheater"
+                            value={theater.latitudeTheater}
+                            onChange={handleChange}
+                            placeholder="e.g., 10.65301052508624"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Vĩ độ:</label>
+                        <input
+                            type="text"
+                            name="longitudeTheater"
+                            value={theater.longitudeTheater}
+                            onChange={handleChange}
+                            placeholder="e.g., 10.801182035933683"
+                        />
+                    </div>
+                    <div className="form-group">
+                        <label>Tỉnh/Thành phố:</label>
+                        <select
+                            name="nameProvince"
+                            value={theater.nameProvince}
+                            onChange={handleChange}
+                        >
+                            <option value="">Chọn tỉnh/thành phố</option>
+                            {provinces.map((province, index) => (
+                                <option key={index} value={province}>{province}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label>Tên Rạp:</label>
+                        <input
+                            type="text"
+                            name="nameTheater"
+                            value={theater.nameTheater}
+                            onChange={handleChange}
+                            placeholder="e.g., Công Hòa"
+                        />
+                    </div>
+                    <button type="submit">Thêm Rạp</button>
+                </form>
+            </div>
+        </>
+    );
 }

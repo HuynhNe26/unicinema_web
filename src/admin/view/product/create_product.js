@@ -195,6 +195,7 @@ const CreateProduct = () => {
       <div className="form-card">
         <h1 className="form-title">THÊM PHIM</h1>
         <form onSubmit={handleSubmit} className="movie-form">
+          <span className="span">ID Phim</span>
           <input
             type="text"
             name="id"
@@ -204,6 +205,7 @@ const CreateProduct = () => {
             className="form-input"
             readOnly
           />
+          <span className="span">Thể loại phim</span>
           <select
             name="idCategory"
             value={movieData.idCategory}
@@ -217,6 +219,7 @@ const CreateProduct = () => {
               </option>
             ))}
           </select>
+          <span className="span">Tên phim</span>
           <input
             type="text"
             name="nameMovie"
@@ -225,6 +228,7 @@ const CreateProduct = () => {
             placeholder="Tên phim"
             className="form-input"
           />
+          <span className="span">Tác giả</span>
           <input
             type="text"
             name="actor"
@@ -233,6 +237,7 @@ const CreateProduct = () => {
             placeholder="Tác giả"
             className="form-input"
           />
+          <span className="span">Độ tuổi</span>
           <input
             type="number"
             name="ageMovie"
@@ -241,6 +246,7 @@ const CreateProduct = () => {
             placeholder="Độ tuổi"
             className="form-input"
           />
+          <span className="span">Mô tả</span>
           <textarea
             name="descriptionMovie"
             value={movieData.descriptionMovie}
@@ -248,6 +254,7 @@ const CreateProduct = () => {
             placeholder="Mô tả phim"
             className="form-input form-textarea"
           />
+          <span className="span">Hình bìa</span>
           <input
             type="text"
             name="imageMovie1"
@@ -256,6 +263,7 @@ const CreateProduct = () => {
             placeholder="Url"
             className="form-input"
           />
+          <span className="span">Hình ảnh 2 (nếu có)</span>
           <input
             type="text"
             name="imageMovie2"
@@ -264,6 +272,7 @@ const CreateProduct = () => {
             placeholder="Url"
             className="form-input"
           />
+          <span className="span">Hình ảnh 3 (nếu có)</span>
           <input
             type="text"
             name="imageMovie3"
@@ -272,6 +281,7 @@ const CreateProduct = () => {
             placeholder="Url"
             className="form-input"
           />
+          <span className="span">Ngôn ngữ</span>
           <input
             type="text"
             name="languageMovie"
@@ -280,6 +290,7 @@ const CreateProduct = () => {
             placeholder="Ngôn ngữ"
             className="form-input"
           />
+          <span className="span">Diễn viên</span>
           <input
             type="text"
             name="performer"
@@ -288,6 +299,7 @@ const CreateProduct = () => {
             placeholder="Diễn viên"
             className="form-input"
           />
+          <span className="span">Thời lượng</span>
           <input
             type="number"
             name="timeMovie"
@@ -296,6 +308,7 @@ const CreateProduct = () => {
             placeholder="Thời lượng"
             className="form-input"
           />
+          <span className="span">Trailer (</span>
           <input
             type="text"
             name="trailer"

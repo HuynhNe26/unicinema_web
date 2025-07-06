@@ -108,9 +108,17 @@ const NavbarAdmin = () => {
                 items: [
                     { to: 'manage_product', label: 'QUẢN LÝ PHIM' },
                     { to: 'create_product', label: 'THÊM PHIM' },
-                    { to: 'create_productDetails', label: 'THÊM CHI TIẾT SẢN PHẨM' },
                     { to: 'manage_product', label: 'LỊCH PHIM' },
                     { to: 'manage_order_all', label: 'QUẢN LÝ COMMENT PHIM' },
+                ],
+            },
+            {
+                section: 'Quản lý suất chiếu',
+                items: [
+                    { to: 'manage_screen', label: 'QUẢN LÝ SUẤT CHIẾU' },
+                    { to: 'create_screen', label: 'THÊM SUẤT CHIẾU' },
+                    { to: 'manage_screenRoom', label: 'QUẢN LÝ PHÒNG CHIẾU' },
+                    { to: 'create_screenRoom', label: 'THÊM PHÒNG CHIẾU' },
                 ],
             },
             {
@@ -118,6 +126,13 @@ const NavbarAdmin = () => {
                 items: [
                     { to: 'manage_theater', label: 'QUẢN LÝ RẠP' },
                     { to: 'create_theater', label: 'THÊM RẠP' },
+                ],
+            },
+            {
+                section: 'Quản lý quà tặng',
+                items: [
+                    { to: 'manage_gift', label: 'QUẢN LÝ QUÀ TẶNG' },
+                    { to: 'create_gift', label: 'THÊM QUÀ TẶNG' },
                 ],
             },
             {
