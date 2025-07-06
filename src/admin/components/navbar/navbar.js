@@ -113,12 +113,11 @@ const NavbarAdmin = () => {
                 ],
             },
             {
-                section: 'Quản lý suất chiếu',
+                section: 'Quản lý phòng chiếu',
                 items: [
-                    { to: 'manage_screen', label: 'QUẢN LÝ SUẤT CHIẾU' },
-                    { to: 'create_screen', label: 'THÊM SUẤT CHIẾU' },
                     { to: 'manage_screenRoom', label: 'QUẢN LÝ PHÒNG CHIẾU' },
                     { to: 'create_screenRoom', label: 'THÊM PHÒNG CHIẾU' },
+                    { to: 'create_screen', label: 'THÊM SUẤT CHIẾU' }
                 ],
             },
             {

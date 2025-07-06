@@ -10,6 +10,9 @@ import ProductDetails from '../admin/view/product/product_details';
 import CreateProduct from '../admin/view/product/create_product';
 import ManageTheater from '../admin/view/theater/manage_theater';
 import CreateTheater from '../admin/view/theater/create_theater';
+import CreateScreen from '../admin/view/screening/create_screen';
+import CreateScreenRoom from '../admin/view/screeningRoom/create_screenRoom';
+import ManageScreenRoom from '../admin/view/screeningRoom/manage_screenRoom';
 
 export default function Router() {
    
@@ -32,6 +35,14 @@ export default function Router() {
                     {/**Quản lý rạp */}
                     <Route path="manage_theater" element={<ManageTheater />} />
                     <Route path="create_theater" element={<CreateTheater />} />
+
+                    {/**Quản lý suất chiếu */}
+                    <Route path="create_screen" element={<CreateScreen />} />
+
+                    {/**Quản lý phòng chiếu */}
+                    <Route path="manage_screenRoom" element={<ManageScreenRoom />} />
+                    <Route path="create_screenRoom" element={<CreateScreenRoom />} />
+
                 </Route>
                 <Route path="*" element={<div>404 - Trang không tìm thấy</div>} />
             </Routes>
