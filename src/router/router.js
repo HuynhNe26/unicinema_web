@@ -14,6 +14,9 @@ import CreateScreen from '../admin/view/screening/create_screen';
 import CreateScreenRoom from '../admin/view/screeningRoom/create_screenRoom';
 import ManageScreenRoom from '../admin/view/screeningRoom/manage_screenRoom';
 import CreateGift from '../admin/view/gift/create_gift';
+import ManageGift from '../admin/view/gift/manage_gift';
+import ManagePromotion from '../admin/view/promotion/manage_promotion';
+import CreatePromotion from '../admin/view/promotion/create_promotion';
 
 export default function Router() {
    
@@ -46,7 +49,11 @@ export default function Router() {
 
                     {/**Quản lý voucher */}
                     <Route path="create_gift" element={<CreateGift />} />
-                    
+                    <Route path="manage_gift" element={<ManageGift />} />
+
+                    {/**Quản lý khuyến mãi */}
+                    <Route path="manage_promotion" element={<ManagePromotion />} />
+                    <Route path="create_promotion" element={<CreatePromotion />} />
 
                 </Route>
                 <Route path="*" element={<div>404 - Trang không tìm thấy</div>} />
