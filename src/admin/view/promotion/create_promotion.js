@@ -45,9 +45,9 @@ export default function CreatePromotion() {
     }
 
     return (
-        <div style={{ padding: "20px" }}>
+        <div>
             <ToastContainer />
-            <h2>Tạo Khuyến mãi</h2>
+            <h2>Tạo Khuyến Mãi</h2>
             {error && <p style={{ color: "red" }}>{error}</p>}
             <form onSubmit={handleSubmit}>
                 <div style={{ marginBottom: "10px" }}>

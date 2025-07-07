@@ -56,8 +56,6 @@ const CreateScreenRoom = () => {
         const deskId = `idDesk${row}${i.toString().padStart(2, '0')}`;
         desks.push({
           id: deskId,
-          row: row,
-          seat: i.toString().padStart(2, '0'),
           available: true
         });
       }
@@ -74,6 +72,7 @@ const CreateScreenRoom = () => {
   };
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     if (!newRoom.idTheater || !newRoom.nameScreenRoom || !newRoom.stateScreenRoom) {
       toast.error("Vui lòng điền đầy đủ thông tin!!");
@@ -82,14 +81,13 @@ const CreateScreenRoom = () => {
     const screenRoomId = await generateSequentialId();
     const roomData = { ...newRoom, idScreenRoom: screenRoomId };
     try {
-      const screenRoomRef = await addDoc(collection(db, "screeningRoom"), roomData);
+      const screenRoomRef = doc(db, "screeningRoom", screenRoomId);
+        await setDoc(screenRoomRef, roomData);
 
       const deskCollectionRef = collection(db, "screeningRoom", screenRoomId, "desk");
       const desks = generateDesks(screenRoomId);
       for (const desk of desks) {
         await setDoc(doc(deskCollectionRef, desk.id), {
-          row: desk.row,
-          seat: desk.seat,
           available: desk.available
         });
       }
@@ -106,6 +104,8 @@ const CreateScreenRoom = () => {
     } catch (error) {
       console.error("Lỗi khi tạo phòng chiếu hoặc ghế:", error);
       toast.error("Không thể tạo phòng chiếu hoặc ghế. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,7 +115,6 @@ const CreateScreenRoom = () => {
 
   return (
     <div style={{
-      padding: '20px',
       maxWidth: '600px',
       margin: '0 auto'
     }}>
@@ -192,7 +191,8 @@ const CreateScreenRoom = () => {
             backgroundColor: '#1da1f2',
             color: 'white',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            marginLeft: '220px'
           }}
           onMouseOver={(e) => e.target.style.backgroundColor = '#1a91da'}
           onMouseOut={(e) => e.target.style.backgroundColor = '#1da1f2'}

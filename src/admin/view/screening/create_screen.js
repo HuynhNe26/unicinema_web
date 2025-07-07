@@ -79,6 +79,7 @@ const CreateScreen = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    let formattedValue;
     setNewScreen(prevState => ({
       ...prevState,
       [name]: value
@@ -98,8 +99,8 @@ const CreateScreen = () => {
       const screeningRef = doc(db, "screening", screeningId);
       await setDoc(screeningRef, {
         idScreening: screeningId,
-        dateTimeStart: newScreen.dateTimeStart,
-        dateTimeEnd: newScreen.dateTimeEnd,
+        dateTimeStart: newScreen.dateTimeStart ? new Date(newScreen.dateTimeStart) : null,
+        dateTimeEnd: newScreen.dateTimeEnd ? new Date(newScreen.dateTimeEnd) : null,
         idMovie: newScreen.idMovie,
         stateScreening: true
       });

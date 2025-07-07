@@ -165,8 +165,7 @@ export default function ManageScreenRoom() {
         <>
             <style>
                 {`
-                    .manage-screen-room-container {
-                        padding: 20px;
+                    .manage-screen-room-container { 
                         max-width: 800px;
                         margin: 0 auto;
                     }

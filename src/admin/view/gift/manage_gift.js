@@ -156,7 +156,6 @@ export default function ManageGift() {
         {`
           .manage-gift-container {
             min-height: 100vh;
-            padding: 20px;
             font-family: Arial, sans-serif;
           }
 
