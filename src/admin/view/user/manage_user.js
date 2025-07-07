@@ -1,55 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, Timestamp } from 'firebase/firestore';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyCmQ28yB0uCBOPa9dKbyWIYpH2gieJ3tWI",
-  authDomain: "unicinema-80396.firebaseapp.com",
-  projectId: "unicinema-80396",
-  storageBucket: "unicinema-80396.firebasestorage.app",
-  messagingSenderId: "503641676608",
-  appId: "1:503641676608:web:f35437aacdbef9c4c2f8a5",
-  measurementId: "G-N8SHR5E70L"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { db } from '../../../api/firebase/firebase';
+import Loading from '../../components/loading/loading';
 
 export default function ManageUser() {
     const [users, setUsers] = useState([]);
+    const [memberships, setMemberships] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
-        const fetchUsers = async () => {
+        const fetchData = async () => {
             setError('');
             setLoading(true);
             try {
-                const querySnapshot = await getDocs(collection(db, 'users'));
-                const usersData = querySnapshot.docs.map(doc => {
+                // Lấy dữ liệu từ collection 'users'
+                const usersQuerySnapshot = await getDocs(collection(db, 'users'));
+                const usersData = usersQuerySnapshot.docs.map(doc => {
                     const data = doc.data();
-                    // Chuyển đổi timestamp Firebase nếu có
-                    if (data.created_at && data.created_at instanceof Timestamp) {
-                        data.created_at = data.created_at.toDate();
+                    if (data.dateEnd && data.dateEnd instanceof Timestamp) {
+                        data.dateEnd = data.dateEnd.toDate();
                     }
-
-                    if (data.dateTimeMemberEnd && data.dateTimeMemberEnd instanceof Timestamp) {
-                        data.dateTimeMemberEnd = data.dateTimeMemberEnd.toDate();
+                    if (data.dateStart && data.dateStart instanceof Timestamp) {
+                        data.dateStart = data.dateStart.toDate();
                     }
-                    if (data.dateTimeMemberStart && data.dateTimeMemberStart instanceof Timestamp) {
-                        data.dateTimeMemberStart = data.dateTimeMemberStart.toDate();
-                    }
-                    if (data.birthOfDate && data.birthOfDate instanceof Timestamp) {
-                        data.birthOfDate = data.birthOfDate.toDate();
-                    }
-                    
-
                     return {
                         id: doc.id,
                         ...data,
@@ -57,20 +35,31 @@ export default function ManageUser() {
                 });
                 setUsers(usersData);
 
+                // Lấy dữ liệu từ collection 'memberShip'
+                const membershipsQuerySnapshot = await getDocs(collection(db, 'memberShip'));
+                const membershipsData = membershipsQuerySnapshot.docs.map(doc => {
+                    const data = doc.data();
+                    return {
+                        id: doc.id,
+                        ...data,
+                    };
+                });
+                setMemberships(membershipsData);
+
             } catch (err) {
-                console.error('Error fetching users:', err);
-                setError('Đã xảy ra lỗi khi tải danh sách người dùng.');
+                console.error('Error fetching data:', err);
+                setError('Đã xảy ra lỗi khi tải danh sách.');
                 toast.error('Lỗi kết nối Firestore.');
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchUsers();
+        fetchData();
     }, []);
 
     if (loading) {
-        return <div className="loading">Đang tải...</div>;
+        return <Loading />; // Sử dụng component Loading thay vì div
     }
 
     return (
@@ -86,29 +75,31 @@ export default function ManageUser() {
                         <tr>
                             <th>STT</th>
                             <th>Họ và tên</th>
-                            <th>Ngày tạo</th>
                             <th>Ngày hết hạn thành viên</th>
                             <th>Ngày bắt đầu thành viên</th>
                             <th>Email</th>
-                            <th>Số điện thoại</th>
-                            <th>Hạng thành viên</th>
-                            <th>Điểm</th>
+                            <th>Địa chỉ</th>
+                            <th>Hạng Thành Viên</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user, index) => (
-                            <tr key={user.id}>
-                                <td>{index + 1}</td>
-                                <td>{user.fullName || 'N/A'}</td>
-                                <td>{user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A'}</td>
-                                <td>{user.dateTimeMemberEnd ? new Date(user.dateTimeMemberEnd).toLocaleString() : 'N/A'}</td>
-                                <td>{user.dateTimeMemberStart ? new Date(user.dateTimeMemberStart).toLocaleString() : 'N/A'}</td>
-                                <td>{user.email || 'N/A'}</td>
-                                <td>{'0' + user.phoneNumberUser || 'N/A'}</td>
-                                <td>{user.idMemberShip || 'N/A'}</td>
-                                <td>{user.pointUser || '0'}</td>
-                            </tr>
-                        ))}
+                        {users.map((user, index) => {
+                            // Tìm membership có id khớp với idMemberShip của user
+                            const matchingMembership = memberships.find(m => m.id === user.idMemberShip);
+                            const membershipName = matchingMembership ? matchingMembership.nameMemberShip : 'N/A';
+
+                            return (
+                                <tr key={user.id}>
+                                    <td>{index + 1}</td>
+                                    <td>{user.full_name || 'N/A'}</td>
+                                    <td>{user.dateEnd ? new Date(user.dateEnd).toLocaleString() : 'N/A'}</td>
+                                    <td>{user.dateStart ? new Date(user.dateStart).toLocaleString() : 'N/A'}</td>
+                                    <td>{user.email || 'N/A'}</td>
+                                    <td>{user.address || 'N/A'}</td>
+                                    <td>{membershipName}</td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             )}
@@ -132,13 +123,6 @@ export default function ManageUser() {
                     color: red;
                     text-align: center;
                     margin-bottom: 20px;
-                }
-
-                .loading {
-                    text-align: center;
-                    padding: 20px;
-                    color: #002856;
-                    font-size: 18px;
                 }
 
                 .user-table {

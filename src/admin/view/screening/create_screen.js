@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { getFirestore, collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import {db} from '../../../api/firebase/firebase'
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import Loading from '../../components/loading/loading';
 
 const CreateScreen = () => {
   const [newScreen, setNewScreen] = useState({
@@ -12,8 +15,10 @@ const CreateScreen = () => {
   });
   const [movies, setMovies] = useState([]);
   const [screenRooms, setScreenRooms] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
     const fetchMovies = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "movies"));
@@ -22,15 +27,18 @@ const CreateScreen = () => {
           ...doc.data()
         }));
         setMovies(movieList);
-        console.log("Fetched movies:", movieList);
+        console.log("Dữ liệu phim:", movieList);
       } catch (error) {
-        console.error("Error fetching movies:", error);
+        console.error("Lỗi lấy dữ liệu phim:", error);
+      } finally {
+        setLoading(false)
       }
     };
 
     const fetchScreenRooms = async () => {
+      setLoading(true);
       try {
-        // Thử fetch từ collection screeningRoom độc lập
+        // fetch từ collection screeningRoom độc lập
         const screenRoomSnapshot = await getDocs(collection(db, "screeningRoom"));
         let rooms = [];
         screenRoomSnapshot.forEach(doc => {
@@ -40,13 +48,16 @@ const CreateScreen = () => {
           });
         });
         if (rooms.length === 0) {
-          console.warn("No screening rooms found in screeningRoom collection.");
+          console.warn("Không có phòng chiếu nào được tìm thấy");
         } else {
-          console.log("Fetched screen rooms from screeningRoom:", rooms);
+          console.log("Lấy dữ liệu thành công", rooms);
         }
         setScreenRooms(rooms);
       } catch (error) {
-        console.error("Error fetching screen rooms:", error);
+        console.error("Lỗi lấy dữ liệu phòng chiếu:", error);
+        toast.error("Lỗi lấy dữ liệu phòng chiếu! Vui lòng thử lại!");
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -61,6 +72,7 @@ const CreateScreen = () => {
       return `idScreening${(count + 1).toString().padStart(23, '0')}`;
     } catch (error) {
       console.error("Error generating screening ID:", error);
+      toast.error("Lỗi hệ thống, vui lòng thử lại!");
       return `idScreening000000000000000000000001`;
     }
   };
@@ -74,9 +86,10 @@ const CreateScreen = () => {
   };
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     if (!newScreen.dateTimeStart || !newScreen.dateTimeEnd || !newScreen.idMovie || !newScreen.idScreenRoom) {
-      alert("Vui lòng điền đầy đủ thông tin!");
+      toast.success("Vui lòng điền đầy đủ thông tin!");
       return;
     }
     const screeningId = await generateScreeningId();
@@ -97,7 +110,7 @@ const CreateScreen = () => {
         idScreenRoom: newScreen.idScreenRoom
       });
 
-      alert("Suất chiếu đã được tạo thành công!");
+      toast.success("Suất chiếu đã được tạo thành công!");
       setNewScreen({
         idScreening: '',
         dateTimeStart: '',
@@ -107,9 +120,15 @@ const CreateScreen = () => {
       });
     } catch (error) {
       console.error("Lỗi khi tạo suất chiếu:", error);
-      alert("Không thể tạo suất chiếu. Vui lòng kiểm tra console để xem chi tiết!");
+      toast.error("Không thể tạo suất chiếu. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
     <div style={{
@@ -117,6 +136,7 @@ const CreateScreen = () => {
       maxWidth: '600px',
       margin: '0 auto'
     }}>
+      <ToastContainer /> 
       <h2 style={{ textAlign: 'center', marginBottom: '20px' }}>TẠO SUẤT CHIẾU MỚI</h2>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '15px' }}>

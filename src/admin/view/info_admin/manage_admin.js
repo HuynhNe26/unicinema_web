@@ -3,17 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import AuthModel from '../../../models/authAdmin';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Loading from '../../components/loading/loading';
 
 export default function ManageAdmin() {
     const [admin, setAdmin] = useState([]);
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
         const fetchAdmins = async () => {
             setError('');
-            setLoading(true);
+            setIsLoading(true);
             try {
                 if (!AuthModel.isAuthenticated()) {
                     toast.error('Vui lòng đăng nhập để xem danh sách quản trị viên.');
@@ -41,7 +42,7 @@ export default function ManageAdmin() {
                 setError('Đã xảy ra lỗi khi tải danh sách quản trị viên.');
                 toast.error('Lỗi kết nối server.');
             } finally {
-                setLoading(false);
+                setIsLoading(false);
             }
         };
 
@@ -78,8 +79,8 @@ export default function ManageAdmin() {
         navigate(`/admin/edit_admin/${id}`);
     };
 
-    if (loading) {
-        return <div className="loading">Đang tải...</div>;
+    if (isLoading) {
+        return <Loading />;
     }
 
     return (

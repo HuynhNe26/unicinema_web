@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
-import {db} from '../../../api/firebase/firebase'
+import { collection, getDocs, updateDoc, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { db } from '../../../api/firebase/firebase';
+import Loading from '../../components/loading/loading';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function ManageScreenRoom() {
     const [screenRooms, setScreenRooms] = useState([]);
@@ -19,10 +21,14 @@ export default function ManageScreenRoom() {
     const [theaters, setTheaters] = useState([]);
     const [availableProvinces, setAvailableProvinces] = useState([]);
     const [selectedScreenRoomId, setSelectedScreenRoomId] = useState('');
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         const fetchTheaters = async () => {
             try {
+                setIsLoading(true);
+                setError(null);
                 const querySnapshot = await getDocs(collection(db, "theaters"));
                 const theaterList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 setTheaters(theaterList);
@@ -30,6 +36,9 @@ export default function ManageScreenRoom() {
                 setAvailableProvinces(uniqueProvinces);
             } catch (error) {
                 console.error("Error fetching theaters:", error);
+                setError("Không thể tải danh sách rạp. Vui lòng thử lại.");
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchTheaters();
@@ -38,6 +47,8 @@ export default function ManageScreenRoom() {
     useEffect(() => {
         const fetchScreenRooms = async () => {
             try {
+                setIsLoading(true);
+                setError(null);
                 let q = collection(db, "screeningRoom");
                 if (selectedProvince) {
                     const theaterIds = theaters
@@ -55,6 +66,9 @@ export default function ManageScreenRoom() {
                 setScreenRooms(rooms);
             } catch (error) {
                 console.error("Lỗi lấy phòng chiếu:", error);
+                setError("Không thể tải danh sách phòng chiếu. Vui lòng thử lại.");
+            } finally {
+                setIsLoading(false);
             }
         };
         fetchScreenRooms();
@@ -64,12 +78,17 @@ export default function ManageScreenRoom() {
         const fetchScreenings = async () => {
             if (selectedScreenRoomId) {
                 try {
+                    setIsLoading(true);
+                    setError(null);
                     const q = query(collection(db, "screening"), where("idScreenRoom", "==", selectedScreenRoomId));
                     const querySnapshot = await getDocs(q);
                     const screeningList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     setScreenings(screeningList);
                 } catch (error) {
                     console.error("Lỗi lấy dữ liệu suất chiếu:", error);
+                    setError("Không thể tải danh sách suất chiếu. Vui lòng thử lại.");
+                } finally {
+                    setIsLoading(false);
                 }
             } else {
                 setScreenings([]);
@@ -86,7 +105,7 @@ export default function ManageScreenRoom() {
         }));
     };
 
-        const handleEditRoom = (room) => {
+    const handleEditRoom = (room) => {
         setEditRoom(room);
         setNewRoom({ ...room });
     };
@@ -94,20 +113,53 @@ export default function ManageScreenRoom() {
     const handleDeleteRoom = async (id) => {
         if (window.confirm("Bạn có chắc chắn muốn xóa phòng chiếu " + id)) {
             try {
+                setIsLoading(true);
+                setError(null);
                 await deleteDoc(doc(db, "screeningRoom", id));
                 setScreenRooms(screenRooms.filter(room => room.id !== id));
-                alert("Xóa phòng chiếu thành công!");
+                toast.success("Xóa phòng chiếu thành công!");
             } catch (error) {
                 console.error("Lỗi xóa phòng chiếu:", error);
-                alert("Xóa phòng chiếu thất bại! Lỗi: " + error.message);
+                toast.error("Xóa phòng chiếu thất bại!");
+            } finally {
+                setIsLoading(false);
             }
         }
     };
 
     const handleSelectScreenRoom = (id) => {
         setSelectedScreenRoomId(id);
-        
     };
+
+    if (isLoading) {
+        return <Loading />;
+    }
+
+    if (error) {
+        return (
+            <div className="manage-screen-room-container">
+                <ToastContainer />
+                <h2>QUẢN LÝ PHÒNG CHIẾU</h2>
+                <p style={{ color: "red", textAlign: "center" }}>{error}</p>
+                <button
+                    style={{
+                        padding: '10px 20px',
+                        backgroundColor: '#1da1f2',
+                        color: 'white',
+                        border: 'none',
+                        cursor: 'pointer',
+                        margin: '0 auto',
+                        display: 'block'
+                    }}
+                    onClick={() => window.location.reload()}
+                    onMouseOver={(e) => e.target.style.backgroundColor = '#1a91da'}
+                    onMouseOut={(e) => e.target.style.backgroundColor = '#1da1f2'}
+                >
+                    Thử lại
+                </button>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -183,6 +235,7 @@ export default function ManageScreenRoom() {
                 
                 <div className="room-list">
                     <h3>Danh Sách Phòng Chiếu</h3>
+                    {screenRooms.length === 0 && <p>Không có phòng chiếu nào.</p>}
                     {screenRooms.map((room) => (
                         <div key={room.id} className="room-item">
                             <span>
@@ -200,6 +253,7 @@ export default function ManageScreenRoom() {
                 {selectedScreenRoomId && (
                     <div className="screening-list">
                         <h3>Danh Sách Suất Chiếu</h3>
+                        {screenings.length === 0 && <p>Không có suất chiếu nào.</p>}
                         {screenings.map((screening) => (
                             <div key={screening.id} className="screening-item">
                                 <span>

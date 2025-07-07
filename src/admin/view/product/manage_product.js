@@ -2,24 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCmQ28yB0uCBOPa9dKbyWIYpH2gieJ3tWI",
-  authDomain: "unicinema-80396.firebaseapp.com",
-  projectId: "unicinema-80396",
-  storageBucket: "unicinema-80396.firebasestorage.app",
-  messagingSenderId: "503641676608",
-  appId: "1:503641676608:web:f35437aacdbef9c4c2f8a5",
-  measurementId: "G-N8SHR5E70L"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../../../api/firebase/firebase';
+import Loading from '../../components/loading/loading';
 
 export default function ManageProduct() {
-  const [products, setProduct] = useState([]);
+  const [products, setProducts] = useState([]); // Sửa lỗi chính tả setProduct -> setProducts
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,17 +18,17 @@ export default function ManageProduct() {
       setLoading(true);
       try {
         const querySnapshot = await getDocs(collection(db, 'movies'));
-        const product = querySnapshot.docs.map(doc => {
+        const products = querySnapshot.docs.map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
             ...data,
           };
         });
-        setProduct(product);
+        setProducts(products); // Sử dụng setProducts thay vì setProduct
       } catch (err) {
         console.error('Error fetching users:', err);
-        setError('Đã xảy ra lỗi khi tải danh sách phim.');
+        toast.error('Đã xảy ra lỗi khi tải danh sách phim.');
         toast.error('Lỗi kết nối Firestore.');
       } finally {
         setLoading(false);
@@ -49,17 +37,13 @@ export default function ManageProduct() {
 
     fetchProduct();
   }, []);
-  
+
   const handleDetails = (id) => {
     navigate(`/admin/product_details/${id}`);
   };
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-      </div>
-    );
+    return <Loading />; // Sử dụng component Loading thay vì div tùy chỉnh
   }
 
   return (
@@ -144,27 +128,7 @@ export default function ManageProduct() {
           background: #f5f5f5;
         }
 
-        .loading-container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 200px;
-        }
-
-        .spinner {
-          width: 50px;
-          height: 50px;
-          border: 6px solid #ccc;
-          border-top: 6px solid #002856;
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          to {
-            transform: rotate(360deg);
-          }
-        }
+        /* Xóa style không cần thiết cho loading-container và spinner */
       `}</style>
     </div>
   );

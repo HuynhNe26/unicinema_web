@@ -1,20 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, setDoc, doc, getCountFromServer } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCmQ28yB0uCBOPa9dKbyWIYpH2gieJ3tWI",
-  authDomain: "unicinema-80396.firebaseapp.com",
-  projectId: "unicinema-80396",
-  storageBucket: "unicinema-80396.firebasestorage.app",
-  messagingSenderId: "503641676608",
-  appId: "1:503641676608:web:f35437aacdbef9c4c2f8a5",
-  measurementId: "G-N8SHR5E70L"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-console.log("Firebase initialized:", db);
+import { collection, setDoc, doc, getCountFromServer } from 'firebase/firestore';
+import { db } from '../../../api/firebase/firebase';
+import Loading from '../../components/loading/loading';
 
 export default function CreateTheater() {
     const [theater, setTheater] = useState({
@@ -25,8 +12,10 @@ export default function CreateTheater() {
         nameProvince: '',
         nameTheater: ''
     });
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        setLoading(true);
         const getNextTheaterId = async () => {
             try {
                 const coll = collection(db, "theaters");
@@ -36,6 +25,8 @@ export default function CreateTheater() {
                 setTheater(prevState => ({ ...prevState, idTheater: newId }));
             } catch (error) {
                 console.error("Error fetching count:", error);
+            } finally {
+                setLoading(false);
             }
         };
         getNextTheaterId();
@@ -51,6 +42,7 @@ export default function CreateTheater() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setLoading(true);
         if (!theater.addressTheater || !theater.latitudeTheater || !theater.longitudeTheater || !theater.nameProvince || !theater.nameTheater) {
             alert("Please fill all fields.");
             return;
@@ -60,7 +52,7 @@ export default function CreateTheater() {
             console.log("Submitting data with ID:", theaterData.idTheater);
             await setDoc(doc(db, "theaters", theaterData.idTheater), theaterData);
             console.log("Document written with ID: ", theaterData.idTheater);
-            alert("Theater added successfully!");
+            alert("Thêm rạp thành công");
 
             const coll = collection(db, "theaters");
             const snapshot = await getCountFromServer(coll);
@@ -77,6 +69,8 @@ export default function CreateTheater() {
         } catch (error) {
             console.error("Error adding theater: ", error.message);
             alert("Failed to add theater. Check console for details: " + error.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -89,6 +83,10 @@ export default function CreateTheater() {
         "Quảng Trị", "Sóc Trăng", "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa", "Thừa Thiên Huế", "Tiền Giang",
         "Trà Vinh", "Tuyên Quang", "Vĩnh Long", "Vĩnh Phúc", "Yên Bái", "TP. Hồ Chí Minh"
     ];
+
+    if (loading) {
+        return <Loading />;
+    }
 
     return (
         <>
@@ -153,7 +151,6 @@ export default function CreateTheater() {
                             name="addressTheater"
                             value={theater.addressTheater}
                             onChange={handleChange}
-                            placeholder="e.g., Tầng 4, Pico Plaza, 20 Công Hòa, P.12, Q.Tân Bình, TP.HCM, Việt Nam"
                         />
                     </div>
                     <div className="form-group">
@@ -163,7 +160,6 @@ export default function CreateTheater() {
                             name="latitudeTheater"
                             value={theater.latitudeTheater}
                             onChange={handleChange}
-                            placeholder="e.g., 10.65301052508624"
                         />
                     </div>
                     <div className="form-group">
@@ -173,7 +169,6 @@ export default function CreateTheater() {
                             name="longitudeTheater"
                             value={theater.longitudeTheater}
                             onChange={handleChange}
-                            placeholder="e.g., 10.801182035933683"
                         />
                     </div>
                     <div className="form-group">
@@ -196,7 +191,6 @@ export default function CreateTheater() {
                             name="nameTheater"
                             value={theater.nameTheater}
                             onChange={handleChange}
-                            placeholder="e.g., Công Hòa"
                         />
                     </div>
                     <button type="submit">Thêm Rạp</button>

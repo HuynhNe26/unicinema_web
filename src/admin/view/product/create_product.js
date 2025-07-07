@@ -1,25 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, query, orderBy, limit, doc, setDoc } from 'firebase/firestore';
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCmQ28yB0uCBOPa9dKbyWIYpH2gieJ3tWI",
-  authDomain: "unicinema-80396.firebaseapp.com",
-  projectId: "unicinema-80396",
-  storageBucket: "unicinema-80396.firebasestorage.app",
-  messagingSenderId: "503641676608",
-  appId: "1:503641676608:web:f35437aacdbef9c4c2f8a5",
-  measurementId: "G-N8SHR5E70L"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+import { collection, getDocs, query, orderBy, limit, doc, setDoc } from 'firebase/firestore';
+import { db } from '../../../api/firebase/firebase';
+import Loading from '../../components/loading/loading';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CreateProduct = () => {
   const [movieData, setMovieData] = useState({
-    id: "",
+    id: 0, // Sử dụng số nguyên làm ID
     actor: "",
-    ageMovie: "",
+    ageMovie: 0, // Khởi tạo là số nguyên
     descriptionMovie: "",
     idCategory: "",
     imageMovie1: "",
@@ -29,10 +19,13 @@ const CreateProduct = () => {
     nameMovie: "",
     performer: "",
     timeMovie: "",
-    trailer: ""
+    trailer: "",
+    dateTimeStart: "", // Thêm trường dateTimeStart
+    dateTimeEnd: ""    // Thêm trường dateTimeEnd
   });
   const [categories, setCategories] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Loading cho tải dữ liệu ban đầu
+  const [isSubmitting, setIsSubmitting] = useState(false); // Loading cho submit form
 
   useEffect(() => {
     const fetchLatestId = async () => {
@@ -40,16 +33,20 @@ const CreateProduct = () => {
         const moviesCollection = collection(db, "movies");
         const q = query(moviesCollection, orderBy("id", "desc"), limit(1));
         const querySnapshot = await getDocs(q);
-        console.log("Query Snapshot:", querySnapshot.docs.map(doc => doc.id)); // Debug
-        let newId = "idMovie0000000000009"; // Bắt đầu từ ID mới nhất của bạn (13 ký tự)
+        let newId = "idMovie0000000000008"; // Bắt đầu từ ID mặc định
         if (!querySnapshot.empty) {
           const latestDoc = querySnapshot.docs[0];
-          newId = latestDoc.id;
+          const latestId = latestDoc.data().id; // Lấy chuỗi đầy đủ
+          const numericPart = parseInt(latestId.replace("idMovie", ""), 10); // Lấy phần số
+          if (!isNaN(numericPart)) {
+            const newNumericPart = numericPart + 1;
+            newId = `idMovie${newNumericPart.toString().padStart(13, "0")}`; 
+          }
         }
         setMovieData(prevState => ({ ...prevState, id: newId }));
       } catch (error) {
-        console.error("Error fetching latest ID:", error);
-        setMovieData(prevState => ({ ...prevState, id: "idMovie0000000000009" })); // Fallback to latest known ID
+        console.error("Lỗi lấy dữ liệu:", error);
+        setMovieData(prevState => ({ ...prevState, id: "idMovie000000000008" }));
       } finally {
         setIsLoading(false);
       }
@@ -61,11 +58,11 @@ const CreateProduct = () => {
         const querySnapshot = await getDocs(categoriesCollection);
         const categoryList = querySnapshot.docs.map(doc => ({
           id: doc.id,
-          name: doc.data().nameCategory || "No name"
+          name: doc.data().nameCategory || "Không tên"
         }));
         setCategories(categoryList);
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        console.error("Lỗi lấy thể loại:", error);
       }
     };
 
@@ -76,26 +73,54 @@ const CreateProduct = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     console.log(`Changing ${name} to ${value}`); // Debug
+    // Định dạng lại giá trị cho datetime-local và ageMovie
+    let formattedValue;
+    if (name === "dateTimeStart" || name === "dateTimeEnd") {
+      formattedValue = value; // Giữ nguyên định dạng YYYY-MM-DDTHH:MM từ input
+    } else if (name === "ageMovie") {
+      formattedValue = value ? parseInt(value, 10) || 0 : 0; // Chuyển thành số nguyên, mặc định là 0
+    } else if (name === "timeMovie") {
+      formattedValue = value ? parseInt(value, 10) || 0 : 0; // Chuyển thành số nguyên, mặc định là 0
+    } else {
+      formattedValue = value;
+    }
     setMovieData(prevState => ({
       ...prevState,
-      [name]: value
+      [name]: formattedValue
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!movieData.id) {
-      alert("Id không được tạo. Xin vui lòng thử lại!");
+      toast.error("Lỗi hệ thống tạo phim. Vui lòng liên hệ admin!");
       return;
     }
-    console.log("Submitting movieData:", movieData); // Debug
+    setIsSubmitting(true); // Bắt đầu loading khi submit
     try {
-      await setDoc(doc(db, "movies", movieData.id), movieData);
-      alert("Phim được thêm thành công!");
+      // Chuyển đổi dateTimeStart và dateTimeEnd thành đối tượng Date
+      const updatedMovieData = {
+        ...movieData,
+        ageMovie: movieData.ageMovie || 0, // Đảm bảo ageMovie là số
+        dateTimeStart: movieData.dateTimeStart ? new Date(movieData.dateTimeStart) : null,
+        dateTimeEnd: movieData.dateTimeEnd ? new Date(movieData.dateTimeEnd) : null,
+      };
+      await setDoc(doc(db, "movies", movieData.id.toString()), updatedMovieData); // Chuyển ID thành chuỗi
+      toast.success("Phim được thêm thành công!");
+      // Sau khi thành công, tạo ID mới
+      const moviesCollection = collection(db, "movies");
+      const q = query(moviesCollection, orderBy("id", "desc"), limit(1));
+      const querySnapshot = await getDocs(q);
+      let newId = 9;
+      if (!querySnapshot.empty) {
+        const latestDoc = querySnapshot.docs[0];
+        newId = latestDoc.data().id + 1; // Tăng ID lên 1
+      }
       setMovieData(prevState => ({
         ...prevState,
+        id: newId,
         actor: "",
-        ageMovie: "",
+        ageMovie: 0, // Reset thành số nguyên
         descriptionMovie: "",
         idCategory: "",
         imageMovie1: "",
@@ -105,13 +130,22 @@ const CreateProduct = () => {
         nameMovie: "",
         performer: "",
         timeMovie: "",
-        trailer: ""
+        trailer: "",
+        dateTimeStart: "", // Reset trường mới
+        dateTimeEnd: ""    // Reset trường mới
       }));
     } catch (error) {
       console.error("Error uploading data: ", error);
-      alert("Failed to upload movie data.");
+      toast.error("Thêm phim thất bại! Vui lòng thử lại!");
+    } finally {
+      setIsSubmitting(false); // Kết thúc loading sau khi hoàn tất
     }
   };
+
+  // Hiển thị Loading nếu isLoading hoặc isSubmitting là true
+  if (isLoading || isSubmitting) {
+    return <Loading />;
+  }
 
   return (
     <div className="app-container">
@@ -193,6 +227,7 @@ const CreateProduct = () => {
         `}
       </style>
       <div className="form-card">
+        <ToastContainer />
         <h1 className="form-title">THÊM PHIM</h1>
         <form onSubmit={handleSubmit} className="movie-form">
           <span className="span">ID Phim</span>
@@ -245,6 +280,7 @@ const CreateProduct = () => {
             onChange={handleChange}
             placeholder="Độ tuổi"
             className="form-input"
+            min="0" // Giới hạn số nguyên không âm
           />
           <span className="span">Mô tả</span>
           <textarea
@@ -308,7 +344,7 @@ const CreateProduct = () => {
             placeholder="Thời lượng"
             className="form-input"
           />
-          <span className="span">Trailer (</span>
+          <span className="span">Trailer</span>
           <input
             type="text"
             name="trailer"
@@ -317,7 +353,25 @@ const CreateProduct = () => {
             placeholder="Trailer"
             className="form-input"
           />
-          <button type="submit" className="form-button">Thêm</button>
+          <span className="span">Ngày bắt đầu</span>
+          <input
+            type="datetime-local"
+            name="dateTimeStart"
+            value={movieData.dateTimeStart}
+            onChange={handleChange}
+            className="form-input"
+          />
+          <span className="span">Ngày kết thúc</span>
+          <input
+            type="datetime-local"
+            name="dateTimeEnd"
+            value={movieData.dateTimeEnd}
+            onChange={handleChange}
+            className="form-input"
+          />
+          <button type="submit" className="form-button" disabled={isSubmitting}>
+            {isSubmitting ? "Đang thêm..." : "Thêm"}
+          </button>
         </form>
       </div>
     </div>

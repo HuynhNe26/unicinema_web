@@ -1,25 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../../../api/firebase/firebase"; // Đường dẫn đến file firebase.js
-import { collection, getDocs, query, where, limit, startAfter, orderBy } from "firebase/firestore";
+import { db } from "../../../api/firebase/firebase";
+import { collection, getDocs, query, where, limit, startAfter, orderBy, deleteDoc, doc } from "firebase/firestore";
+import Loading from "../../components/loading/loading";
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function ManageGift() {
   const [gifts, setGifts] = useState([]);
   const [filteredGifts, setFilteredGifts] = useState([]);
   const [lastDoc, setLastDoc] = useState(null);
-  const [filterExpired, setFilterExpired] = useState("all"); // "all" hoặc "expired"
+  const [filterExpired, setFilterExpired] = useState("all");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true); // Kiểm tra xem còn dữ liệu để tải không
-  const [showDetails, setShowDetails] = useState(null); // Lưu ID gift để hiển thị chi tiết
+  const [hasMore, setHasMore] = useState(true);
+  const [showDetails, setShowDetails] = useState(null);
+  const [error, setError] = useState(null);
   const giftsPerPage = 5;
 
-  // Lấy danh sách gift code từ Firestore
   useEffect(() => {
     let isMounted = true;
 
     const fetchGifts = async () => {
       if (!hasMore || loading) return;
       setLoading(true);
+      setError(null);
 
       let q = query(collection(db, "discounts"), orderBy("dateTimeEnd"), limit(giftsPerPage));
 
@@ -28,13 +32,22 @@ export default function ManageGift() {
       }
 
       if (filterExpired === "expired") {
-        const now = new Date(); // Thời gian động: 12:28 AM +07, July 07, 2025
-        q = query(q, where("dateTimeEnd", "<", now.toISOString()), where("stateDiscount", "==", false));
+        const now = new Date(); // Thời gian động: 12:33 PM +07, July 07, 2025
+        q = query(q, where("dateTimeEnd", "<", now), where("stateDiscount", "==", false));
       }
 
       try {
         const querySnapshot = await getDocs(q);
-        const giftList = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+        const giftList = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data,
+            // Chuyển đổi dateTimeStart và dateTimeEnd thành Date nếu là Timestamp
+            dateTimeStart: data.dateTimeStart instanceof Object ? data.dateTimeStart.toDate() : new Date(data.dateTimeStart),
+            dateTimeEnd: data.dateTimeEnd instanceof Object ? data.dateTimeEnd.toDate() : new Date(data.dateTimeEnd)
+          };
+        });
         console.log("Fetched gifts:", giftList); // Debug: Xem dữ liệu được tải
         if (isMounted) {
           setGifts((prev) => {
@@ -47,6 +60,7 @@ export default function ManageGift() {
         }
       } catch (error) {
         console.error("Lỗi khi lấy gift code:", error);
+        toast.error("Không thể tải danh sách gift code. Vui lòng thử lại.");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -59,33 +73,82 @@ export default function ManageGift() {
     };
   }, [filterExpired, lastDoc, hasMore]);
 
-  // Xử lý phân trang
   const handleLoadMore = () => {
     if (!loading && hasMore) {
       setPage((prev) => prev + 1);
     }
   };
 
-  // Lọc gift code theo trạng thái hết hạn
   const handleFilterChange = (e) => {
     setFilterExpired(e.target.value);
     setPage(1);
     setGifts([]);
     setLastDoc(null);
     setHasMore(true);
-    setShowDetails(null); // Reset chi tiết khi lọc lại
+    setShowDetails(null);
+    setError(null);
   };
 
-  // Kiểm tra trạng thái hết hạn
   const isExpired = (endDate) => {
-    const now = new Date(); // Thời gian động: 12:28 AM +07, July 07, 2025
+    const now = new Date(); // Thời gian động: 12:33 PM +07, July 07, 2025
     return new Date(endDate) < now;
   };
 
-  // Hiển thị chi tiết khi nhấn vào gift code
   const handleShowDetails = (id) => {
-    setShowDetails(showDetails === id ? null : id); // Toggle chi tiết
+    setShowDetails(showDetails === id ? null : id);
   };
+
+  const handleDelete = async (id) => {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa gift code ${id}?`)) {
+      try {
+        setLoading(true);
+        setError(null);
+        await deleteDoc(doc(db, "discounts", id));
+        setGifts(gifts.filter(gift => gift.id !== id));
+        setFilteredGifts(filteredGifts.filter(gift => gift.id !== id));
+        setShowDetails(null);
+        toast.success("Xóa gift code thành công!");
+      } catch (error) {
+        console.error("Lỗi khi xóa gift code:", error);
+        toast.error("Xóa gift code thất bại! Lỗi: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const formatDateTime = (date) => {
+    if (!date || isNaN(new Date(date))) return "N/A";
+    return new Date(date).toLocaleString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+  };
+
+  if (loading) {
+    return <Loading />;
+  }
+
+  if (error) {
+    return (
+      <div className="manage-gift-container">
+        <h2 className="manage-gift-title">Quản Lý Gift Code</h2>
+        <p style={{ color: "red", textAlign: "center" }}>{error}</p>
+        <div style={{ textAlign: "center" }}>
+          <button
+            className="load-more-btn"
+            onClick={() => window.location.reload()}
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -94,7 +157,6 @@ export default function ManageGift() {
           .manage-gift-container {
             min-height: 100vh;
             padding: 20px;
-            background-color: #f5f5f5;
             font-family: Arial, sans-serif;
           }
 
@@ -155,10 +217,9 @@ export default function ManageGift() {
           .gift-table td {
             font-size: 1rem;
             color: #333;
-            cursor: pointer;
           }
 
-          .gift-table td:hover {
+          .gift-table tr:hover {
             background-color: #f0f0f0;
           }
 
@@ -169,7 +230,6 @@ export default function ManageGift() {
             border-radius: 4px;
           }
 
-          .loading,
           .no-data {
             text-align: center;
             padding: 20px;
@@ -194,9 +254,24 @@ export default function ManageGift() {
           .load-more-btn:hover {
             background-color: #0056b3;
           }
+
+          .delete-btn {
+            padding: 8px 12px;
+            background-color: #dc3545;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+          }
+
+          .delete-btn:hover {
+            background-color: #c82333;
+          }
         `}
       </style>
       <div className="manage-gift-container">
+        <ToastContainer />
         <h2 className="manage-gift-title">Quản Lý Gift Code</h2>
         <div className="filter-section">
           <select value={filterExpired} onChange={handleFilterChange} className="filter-select">
@@ -213,32 +288,43 @@ export default function ManageGift() {
                 <th>Ngày Bắt Đầu</th>
                 <th>Ngày Kết Thúc</th>
                 <th>Trạng Thái</th>
+                <th>Hành Động</th>
               </tr>
             </thead>
             <tbody>
               {filteredGifts.map((gift, index) => (
                 <tr key={gift.id} onClick={() => handleShowDetails(gift.id)}>
                   <td>{(page - 1) * giftsPerPage + index + 1}</td>
-                  <td>{gift.code}</td>
-                  <td>{new Date(gift.dateTimeStart).toLocaleString()}</td>
-                  <td>{new Date(gift.dateTimeEnd).toLocaleString()}</td>
+                  <td>{gift.code || "N/A"}</td>
+                  <td>{formatDateTime(gift.dateTimeStart)}</td>
+                  <td>{formatDateTime(gift.dateTimeEnd)}</td>
                   <td>{isExpired(gift.dateTimeEnd) ? "Hết hạn" : "Hoạt động"}</td>
+                  <td>
+                    <button
+                      className="delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Ngăn click vào hàng kích hoạt showDetails
+                        handleDelete(gift.id);
+                      }}
+                    >
+                      Xóa
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
-          {loading && <div className="loading">Đang tải...</div>}
           {!loading && filteredGifts.length === 0 && <div className="no-data">Không có gift code.</div>}
           {showDetails && filteredGifts.find((gift) => gift.id === showDetails) && (
             <div className="details">
-              <p><strong>ID User:</strong> {filteredGifts.find((gift) => gift.id === showDetails).idUser}</p>
-              <p><strong>Ngày Bắt Đầu:</strong> {new Date(filteredGifts.find((gift) => gift.id === showDetails).dateTimeStart).toLocaleString()}</p>
-              <p><strong>Ngày Kết Thúc:</strong> {new Date(filteredGifts.find((gift) => gift.id === showDetails).dateTimeEnd).toLocaleString()}</p>
-              <p><strong>Giảm Giá:</strong> {filteredGifts.find((gift) => gift.id === showDetails).priceDiscount} VND</p>
+              <p><strong>ID User:</strong> {filteredGifts.find((gift) => gift.id === showDetails).idUser || "N/A"}</p>
+              <p><strong>Ngày Bắt Đầu:</strong> {formatDateTime(filteredGifts.find((gift) => gift.id === showDetails).dateTimeStart)}</p>
+              <p><strong>Ngày Kết Thúc:</strong> {formatDateTime(filteredGifts.find((gift) => gift.id === showDetails).dateTimeEnd)}</p>
+              <p><strong>Giảm Giá:</strong> {filteredGifts.find((gift) => gift.id === showDetails).priceDiscount || "N/A"} VND</p>
             </div>
           )}
         </div>
-        {!loading && filteredGifts.length > 0 && filteredGifts.length % giftsPerPage === 0 && (
+        {!loading && filteredGifts.length > 0 && filteredGifts.length % giftsPerPage === 0 && hasMore && (
           <div className="load-more">
             <button onClick={handleLoadMore} className="load-more-btn">
               Tải thêm
