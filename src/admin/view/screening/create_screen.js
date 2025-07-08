@@ -13,57 +13,52 @@ const CreateScreen = () => {
     idMovie: '',
     idScreenRoom: ''
   });
+  const [theaters, setTheaters] = useState([]);
   const [movies, setMovies] = useState([]);
   const [screenRooms, setScreenRooms] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [filteredTheaters, setFilteredTheaters] = useState([]);
+  const [filteredRooms, setFilteredRooms] = useState([]);
 
   useEffect(() => {
+  const fetchAllData = async () => {
     setLoading(true);
-    const fetchMovies = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "movies"));
-        const movieList = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setMovies(movieList);
-        console.log("Dữ liệu phim:", movieList);
-      } catch (error) {
-        console.error("Lỗi lấy dữ liệu phim:", error);
-      } finally {
-        setLoading(false)
-      }
-    };
+    try {
+      // 1. Lấy danh sách phim
+      const movieSnapshot = await getDocs(collection(db, "movies"));
+      const movieList = movieSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMovies(movieList);
 
-    const fetchScreenRooms = async () => {
-      setLoading(true);
-      try {
-        // fetch từ collection screeningRoom độc lập
-        const screenRoomSnapshot = await getDocs(collection(db, "screeningRoom"));
-        let rooms = [];
-        screenRoomSnapshot.forEach(doc => {
-          rooms.push({
-            id: doc.id,
-            ...doc.data()
-          });
-        });
-        if (rooms.length === 0) {
-          console.warn("Không có phòng chiếu nào được tìm thấy");
-        } else {
-          console.log("Lấy dữ liệu thành công", rooms);
-        }
-        setScreenRooms(rooms);
-      } catch (error) {
-        console.error("Lỗi lấy dữ liệu phòng chiếu:", error);
-        toast.error("Lỗi lấy dữ liệu phòng chiếu! Vui lòng thử lại!");
-      } finally {
-        setLoading(false);
-      }
-    };
+      // 2. Lấy danh sách rạp
+      const theaterSnapshot = await getDocs(collection(db, "theaters"));
+      const theaterList = theaterSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTheaters(theaterList);
 
-    fetchMovies();
-    fetchScreenRooms();
-  }, []);
+      // 3. Lấy danh sách phòng chiếu
+      const screenRoomSnapshot = await getDocs(collection(db, "screeningRoom"));
+      const screenRoomList = screenRoomSnapshot.docs.map(doc => {
+        const room = { id: doc.id, ...doc.data() };
+        const theater = theaterList.find(t => t.id === room.idTheater); // nối bảng
+        return {
+          ...room,
+          nameTheater: theater?.nameTheater || 'Không xác định',
+          nameProvince: theater?.nameProvince || ''
+        };
+      });
+
+      setScreenRooms(screenRoomList);
+    } catch (error) {
+      console.error("Lỗi khi lấy dữ liệu:", error);
+      toast.error("Không thể lấy dữ liệu!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchAllData();
+}, []);
+
 
   const generateScreeningId = async () => {
     try {
@@ -79,7 +74,6 @@ const CreateScreen = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    let formattedValue;
     setNewScreen(prevState => ({
       ...prevState,
       [name]: value
@@ -98,17 +92,11 @@ const CreateScreen = () => {
       // Tạo tài liệu cha trong collection screening
       const screeningRef = doc(db, "screening", screeningId);
       await setDoc(screeningRef, {
-        idScreening: screeningId,
         dateTimeStart: newScreen.dateTimeStart ? new Date(newScreen.dateTimeStart) : null,
         dateTimeEnd: newScreen.dateTimeEnd ? new Date(newScreen.dateTimeEnd) : null,
         idMovie: newScreen.idMovie,
+        idScreenRoom: newScreen.idScreenRoom,
         stateScreening: true
-      });
-
-      // Tạo tài liệu trong sub-collection screeningRoom
-      const screenRoomRef = doc(db, "screening", screeningId, "screeningRoom", newScreen.idScreenRoom);
-      await setDoc(screenRoomRef, {
-        idScreenRoom: newScreen.idScreenRoom
       });
 
       toast.success("Suất chiếu đã được tạo thành công!");
@@ -126,6 +114,26 @@ const CreateScreen = () => {
       setLoading(false);
     }
   };
+
+  const handleProvinceChange = (e) => {
+    const province = e.target.value;
+    setSelectedProvince(province);
+
+    const filtered = theaters.filter(theater => theater.nameProvince === province);
+    setFilteredTheaters(filtered);
+
+    // Lọc các room thuộc các rạp đã lọc
+    const theaterIds = filtered.map(theater => theater.id);
+    const filteredRoomList = screenRooms.filter(room => theaterIds.includes(room.idTheater));
+    setFilteredRooms(filteredRoomList);
+
+    setNewScreen(prev => ({
+      ...prev,
+      idScreenRoom: '',
+      idMovie: ''
+    }));
+  };
+
 
   if (loading) {
     return <Loading />;
@@ -174,8 +182,21 @@ const CreateScreen = () => {
             <option value="">Chọn phim</option>
             {movies.map((movie) => (
               <option key={movie.id} value={movie.id}>
-                {movie.nameMovie} (ID: {movie.id})
+                {movie.nameMovie}
               </option>
+            ))}
+          </select>
+        </div>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '5px' }}>Chọn Tỉnh/Thành:</label>
+          <select
+            value={selectedProvince}
+            onChange={handleProvinceChange}
+            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+          >
+            <option value="">Chọn tỉnh/thành</option>
+            {[...new Set(theaters.map(t => t.nameProvince))].map((province, index) => (
+              <option key={index} value={province}>{province}</option>
             ))}
           </select>
         </div>
@@ -189,9 +210,9 @@ const CreateScreen = () => {
             required
           >
             <option value="">Chọn phòng chiếu</option>
-            {screenRooms.map((room) => (
+            {filteredRooms.map((room) => (
               <option key={room.id} value={room.idScreenRoom}>
-                {room.nameScreenRoom || `Phòng ${room.id}`} (ID: {room.idScreenRoom})
+                {room.nameScreenRoom} - {room.nameTheater}
               </option>
             ))}
           </select>

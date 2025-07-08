@@ -48,7 +48,7 @@ const CreateScreenRoom = () => {
   };
 
   const generateDesks = (screenRoomId) => {
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K'];
+    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
     const desks = [];
 
     rows.forEach(row => {
