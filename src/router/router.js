@@ -20,6 +20,7 @@ import CreatePromotion from '../admin/view/promotion/create_promotion';
 import MovieCalendar from '../admin/view/product/calendar';
 import ReportAdmin from '../admin/view/report/report_admin';
 import ReportRevenue from '../admin/view/report/report_revenue';
+import ScreenRoom from '../admin/view/screeningRoom/screeningRoom';
 import Page404 from '../admin/components/404/Page404';
 
 export default function Router() {
@@ -51,6 +52,7 @@ export default function Router() {
                     {/**Quản lý phòng chiếu */}
                     <Route path="manage_screenRoom" element={<ManageScreenRoom />} />
                     <Route path="create_screenRoom" element={<CreateScreenRoom />} />
+                    <Route path="manage_screenRoom/:id" element={<ScreenRoom />} />
 
                     {/**Quản lý voucher */}
                     <Route path="create_gift" element={<CreateGift />} />

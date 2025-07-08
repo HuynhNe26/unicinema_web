@@ -4,6 +4,7 @@ import { db } from '../../../api/firebase/firebase';
 import Loading from '../../components/loading/loading';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useNavigate } from 'react-router';
 
 export default function ManageScreenRoom() {
     const [screenRooms, setScreenRooms] = useState([]);
@@ -18,11 +19,13 @@ export default function ManageScreenRoom() {
     });
     const [editRoom, setEditRoom] = useState(null);
     const [selectedProvince, setSelectedProvince] = useState('');
+    const [selectedTheaterId, setSelectedTheaterId] = useState('');
     const [theaters, setTheaters] = useState([]);
     const [availableProvinces, setAvailableProvinces] = useState([]);
     const [selectedScreenRoomId, setSelectedScreenRoomId] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchTheaters = async () => {
@@ -50,7 +53,9 @@ export default function ManageScreenRoom() {
                 setIsLoading(true);
                 setError(null);
                 let q = collection(db, "screeningRoom");
-                if (selectedProvince) {
+                if (selectedTheaterId) {
+                    q = query(q, where("idTheater", "==", selectedTheaterId));
+                } else if (selectedProvince) {
                     const theaterIds = theaters
                         .filter(theater => theater.nameProvince === selectedProvince)
                         .map(theater => theater.id);
@@ -72,7 +77,7 @@ export default function ManageScreenRoom() {
             }
         };
         fetchScreenRooms();
-    }, [selectedProvince, theaters]);
+    }, [selectedProvince, selectedTheaterId, theaters]);
 
     useEffect(() => {
         const fetchScreenings = async () => {
@@ -128,7 +133,9 @@ export default function ManageScreenRoom() {
     };
 
     const handleSelectScreenRoom = (id) => {
-        setSelectedScreenRoomId(id);
+        sessionStorage.setItem("idScreen", id);
+        setSelectedScreenRoomId(id); 
+        navigate(`${id}`)
     };
 
     if (isLoading) {
@@ -223,7 +230,10 @@ export default function ManageScreenRoom() {
                     <label>Chọn Tỉnh/Thành phố:</label>
                     <select
                         value={selectedProvince}
-                        onChange={(e) => setSelectedProvince(e.target.value)}
+                        onChange={(e) => {
+                            setSelectedProvince(e.target.value);
+                            setSelectedTheaterId(''); // Reset rạp khi đổi tỉnh
+                        }}
                     >
                         <option value="">Tất cả</option>
                         {availableProvinces.map((province, index) => (
@@ -232,16 +242,38 @@ export default function ManageScreenRoom() {
                     </select>
                 </div>
                 
+                {selectedProvince && (
+                    <div className="form-group">
+                        <label>Chọn Rạp:</label>
+                        <select
+                            value={selectedTheaterId}
+                            onChange={(e) => {
+                                const theaterId = e.target.value;
+                                setSelectedTheaterId(theaterId);
+                            }}
+                        >
+                            <option value="">Tất cả rạp</option>
+                            {theaters
+                                .filter(theater => theater.nameProvince === selectedProvince)
+                                .map((theater) => (
+                                    <option key={theater.id} value={theater.id}>
+                                        {theater.nameTheater}
+                                    </option>
+                                ))}
+                        </select>
+                    </div>
+                )}
+
                 <div className="room-list">
                     <h3>Danh Sách Phòng Chiếu</h3>
                     {screenRooms.length === 0 && <p>Không có phòng chiếu nào.</p>}
                     {screenRooms.map((room) => (
                         <div key={room.id} className="room-item">
                             <span>
-                                {room.nameScreenRoom} (ID: {room.id}) - {room.stateScreenRoom}
+                                {room.nameScreenRoom} - {room.stateScreenRoom}
                             </span>
                             <div>
-                                <button onClick={() => handleSelectScreenRoom(room.idScreenRoom)}>Xem Suất Chiếu</button>
+                                <button onClick={() => handleSelectScreenRoom(room.id)}>Xem Suất Chiếu</button>
                                 <button onClick={() => handleEditRoom(room)}>Sửa</button>
                                 <button onClick={() => handleDeleteRoom(room.id)}>Xóa</button>
                             </div>
