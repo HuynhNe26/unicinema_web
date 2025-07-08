@@ -20,6 +20,7 @@ import CreatePromotion from '../admin/view/promotion/create_promotion';
 import MovieCalendar from '../admin/view/product/calendar';
 import ReportAdmin from '../admin/view/report/report_admin';
 import ReportRevenue from '../admin/view/report/report_revenue';
+import Page404 from '../admin/components/404/Page404';
 
 export default function Router() {
    
@@ -64,7 +65,7 @@ export default function Router() {
                     <Route path="report_admin" element={<ReportAdmin />} />
 
                 </Route>
-                <Route path="*" element={<div>404 - Trang không tìm thấy</div>} />
+                <Route path="*" element={<Page404 />} />
             </Routes>
         </BrowserRouter>
     );
