@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthModel from '../../../models/authAdmin';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import Loading from '../../components/loading/loading';
 
 export default function NewAdmin() {
     const [formData, setFormData] = useState({
@@ -14,7 +15,6 @@ export default function NewAdmin() {
         address: '',
         level: '',
         role: '',
-        state: '',
         dateTimeLogin: null,
         dateTimeLogout: null,
         fullname: '',
@@ -37,26 +37,22 @@ export default function NewAdmin() {
         setLoading(true);
 
         try {
-            if (!AuthModel.isAuthenticated()) {
-                toast.error('Vui lòng đăng nhập để thêm quản trị viên.');
-                navigate('/admin/login');
-                return;
-            }
-
-            const payload = {
-                ...formData,
-                level: parseInt(formData.level) || 1, // Default to 1 if invalid
-                dateTimeLogin: null, // Let backend set current time or null
-                dateTimeLogout: null,
-            };
-
             const response = await fetch('http://localhost:5000/new_admin', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${AuthModel.getToken()}`,
                 },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    username: formData.username,
+                    password: formData.password,
+                    fullname: formData.fullname,
+                    role: formData.role,
+                    birthOfDate: formData.birthOfDate,
+                    email: formData.email,
+                    phoneNumber: formData.phoneNumber,
+                    address: formData.address,
+                    level: Number(formData.level),
+                }),
             });
 
             const data = await response.json();
@@ -76,12 +72,14 @@ export default function NewAdmin() {
         }
     };
 
+    if (loading) {
+        return <Loading />
+    }
+
     return (
         <div className="new-admin-container">
             <ToastContainer />
             <h2>Thêm Quản Trị Viên Mới</h2>
-            {error && <div className="error">{error}</div>}
-            {loading && <div className="loading">Đang xử lý...</div>}
             <form onSubmit={handleSubmit} className="admin-form">
                 <div className="form-group">
                     <label>Tên đăng nhập:</label>
@@ -152,15 +150,12 @@ export default function NewAdmin() {
                 </div>
                 <div className="form-group">
                     <label>Cấp độ:</label>
-                    <input
-                        type="number"
-                        name="level"
-                        value={formData.level}
-                        onChange={handleChange}
-                        min="1"
-                        max="3"
-                        required
-                    />
+                    <select name="level" value={formData.level} onChange={handleChange} required>
+                        <option value="">-- Chọn cấp độ --</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                    </select>
                 </div>
                 <div className="form-group">
                     <label>Vai trò:</label>
@@ -168,15 +163,6 @@ export default function NewAdmin() {
                         type="text"
                         name="role"
                         value={formData.role}
-                        onChange={handleChange}
-                    />
-                </div>
-                <div className="form-group">
-                    <label>Trạng thái:</label>
-                    <input
-                        type="text"
-                        name="state"
-                        value={formData.state}
                         onChange={handleChange}
                     />
                 </div>
@@ -239,6 +225,19 @@ export default function NewAdmin() {
                 }
 
                 .form-group input:focus {
+                    outline: none;
+                    border-color: #002856;
+                    box-shadow: 0 0 5px rgba(0, 40, 86, 0.3);
+                }
+
+                .form-group select {
+                    padding: 8px;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    font-size: 14px;
+                }
+
+                .form-group select:focus {
                     outline: none;
                     border-color: #002856;
                     box-shadow: 0 0 5px rgba(0, 40, 86, 0.3);

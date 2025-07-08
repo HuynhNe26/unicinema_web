@@ -18,6 +18,8 @@ import ManageGift from '../admin/view/gift/manage_gift';
 import ManagePromotion from '../admin/view/promotion/manage_promotion';
 import CreatePromotion from '../admin/view/promotion/create_promotion';
 import MovieCalendar from '../admin/view/product/calendar';
+import ReportAdmin from '../admin/view/report/report_admin';
+import ReportRevenue from '../admin/view/report/report_revenue';
 
 export default function Router() {
    
@@ -56,6 +58,10 @@ export default function Router() {
                     {/**Quản lý khuyến mãi */}
                     <Route path="manage_promotion" element={<ManagePromotion />} />
                     <Route path="create_promotion" element={<CreatePromotion />} />
+
+                    {/**Báo cáo */}
+                    <Route path="report_revenue" element={<ReportRevenue />} />
+                    <Route path="report_admin" element={<ReportAdmin />} />
 
                 </Route>
                 <Route path="*" element={<div>404 - Trang không tìm thấy</div>} />

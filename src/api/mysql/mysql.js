@@ -75,8 +75,43 @@ api.get('/manage_admin', async (req, res) => {
         const [rows] = await db.query('SELECT * FROM admin');
         res.status(200).json(rows);
     } catch (error) {
-        console.error('Error fetching admins:', error);
+        console.error('Lỗi lấy dữ liệu admin', error);
         res.status(500).json({ message: 'Lỗi server khi lấy danh sách quản trị viên' });
+    }
+});
+
+api.post("/new_admin", async (req, res) => {
+    const { username, password, fullname, email, phoneNumber, birthOfDate, address, level, role } = req.body;
+
+    try {
+        // Kiểm tra đầy đủ thông tin
+        if (!username || !password || !fullname || !email || !phoneNumber || !birthOfDate || !address || !level || !role) {
+            return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin!" });
+        }
+
+        // Kiểm tra trùng lặp username
+        const [check] = await db.query('SELECT username FROM admin WHERE username = ? AND level = ?', [username, level]);
+        if (check.length > 0) {
+            return res.status(400).json({ message: "Tên đăng nhập đã tồn tại!" });
+        } else {
+            const state = 'Tài khoản mới';
+
+            // Thêm quản trị viên
+            const [rows] = await db.query(
+                `INSERT INTO admin (username, password, fullname, email, phoneNumber, birthOfDate, address, level, role, state, dateTimeLogin, dateTimeLogout) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+                [username, password, fullname, email, phoneNumber, birthOfDate, address, level, role, state, ""]
+            );
+
+            if (rows.affectedRows > 0) {
+                return res.status(201).json({ message: "Thêm quản trị viên thành công!" }); // 201 là mã cho tạo mới
+            } else {
+                return res.status(500).json({ message: "Thêm quản trị viên thất bại, không có hàng bị ảnh hưởng." });
+            }
+        }
+    } catch (error) {
+        console.error('Lỗi thêm admin:', error);
+        res.status(500).json({ message: 'Lỗi server khi thêm admin', error: error.message });
     }
 });
 

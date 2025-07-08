@@ -139,8 +139,8 @@ const NavbarAdmin = () => {
             {
                 section: 'Báo cáo',
                 items: [
-                    { to: 'manage_report', label: 'BÁO CÁO DOANH THU' },
-                    { to: 'manage_order_all', label: 'BÁO CÁO NHÂN VIÊN' },
+                    { to: 'report_revenue', label: 'BÁO CÁO DOANH THU' },
+                    { to: 'report_admin', label: 'BÁO CÁO NHÂN VIÊN' },
                 ],
             },
         ],
