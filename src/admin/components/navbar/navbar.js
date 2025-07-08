@@ -228,25 +228,6 @@ const NavbarAdmin = () => {
             </div>
 
             <div className="main-container">
-                <div className="header"></div>
-                <div className="layout">
-                    <div className="button" onClick={() => navigate('/admin/manage_product')}>
-                        <div className="text">
-                            <div>Quản lý sản phẩm</div>
-                        </div>
-                    </div>
-                    <div className="button" onClick={() => navigate('/admin/manage_order')}>
-                        <div className="text">
-                            <div>Quản lý đơn hàng</div>
-                        </div>
-                    </div>
-                    <div className="button" onClick={() => navigate('/admin/manage_user')}>
-                        <div className="text">
-                            <div>Quản lý người dùng</div>
-                        </div>
-                    </div>
-                </div>
-
                 <div className="main_content">
                     <main>
                         <Outlet />
