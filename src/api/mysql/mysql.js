@@ -4,6 +4,7 @@ const api = express();
 const port = 5000;
 const db = require('../../config/db_mysql');
 const jwt = require('jsonwebtoken');
+const { messaging } = require('firebase-admin');
 
 api.use(cors());
 api.use(express.json());
@@ -114,6 +115,105 @@ api.post("/new_admin", async (req, res) => {
         res.status(500).json({ message: 'Lỗi server khi thêm admin', error: error.message });
     }
 });
+
+api.post('/payment', async (req, res) => {
+    const axios = require('axios');
+    const crypto = require('crypto');
+
+    // Thông tin cấu hình MoMo
+    const accessKey = 'F8BBA842ECF85'; // Thay bằng access key thực tế
+    const secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz'; // Thay bằng secret key thực tế
+    const partnerCode = 'MOMO';
+    const orderInfo = 'Thanh toán vé phim';
+    const redirectUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b'; // Deep link của ứng dụng Android
+    const ipnUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b'; // URL server để nhận thông báo từ MoMo
+    const requestType = 'payWithMethod'; 
+    const amount = req.body.amount || '50000'; // Lấy số tiền từ request hoặc mặc định
+    const orderId = partnerCode + new Date().getTime();
+    const requestId = orderId;
+    const extraData = ''; // Có thể thêm dữ liệu bổ sung nếu cần
+    const lang = 'vi';
+    const autoCapture = true;
+
+    // Tạo raw signature
+    const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+    
+    console.log("--------------------RAW SIGNATURE----------------");
+    console.log(rawSignature);
+
+    // Tạo chữ ký HMAC SHA256
+    const signature = crypto.createHmac('sha256', secretKey)
+        .update(rawSignature)
+        .digest('hex');
+    
+    console.log("--------------------SIGNATURE----------------");
+    console.log(signature);
+
+    // JSON gửi đến MoMo
+    const requestBody = JSON.stringify({
+        partnerCode : partnerCode,
+        partnerName : "Test",
+        storeId : "MomoTestStore",
+        requestId : requestId,
+        amount : amount,
+        orderId : orderId,
+        orderInfo : orderInfo,
+        redirectUrl : redirectUrl,
+        ipnUrl : ipnUrl,
+        lang : lang,
+        requestType: requestType,
+        autoCapture: autoCapture,
+        extraData : extraData,
+        signature : signature
+    });
+
+    // Gọi API MoMo
+    const options = {
+        method: 'POST',
+        url: 'https://test-payment.momo.vn/v2/gateway/api/create',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(requestBody)
+        },
+        data: requestBody
+    };
+
+    try {
+        const result = await axios(options);
+        // Trả về payUrl từ response của MoMo
+        return res.status(200).json({ payUrl: result.data.payUrl, orderId });
+    } catch (error) {
+        console.error('Error calling MoMo API:', error.message);
+        return res.status(500).json({
+            statusCode: 500,
+            message: 'Lỗi server khi gọi API MoMo'
+        });
+    }
+});
+
+api.get('/check-order-status', (req, res) => {
+    const orderId = req.query.orderId;
+    // Lấy trạng thái từ cơ sở dữ liệu
+    const status = getOrderStatusFromDB(orderId); // Hàm giả lập, thay bằng logic thực tế
+    res.json({ status });
+});
+
+function getOrderStatusFromDB(orderId) {
+    // Logic lấy trạng thái từ DB
+    return "SUCCESS"; // Giả lập, thay bằng dữ liệu thực tế
+}
+
+api.get('/check-order-status', (req, res) => {
+    const orderId = req.query.orderId;
+    // Lấy trạng thái từ cơ sở dữ liệu
+    const status = getOrderStatusFromDB(orderId); // Hàm giả lập, thay bằng logic thực tế
+    res.json({ status });
+});
+
+function getOrderStatusFromDB(orderId) {
+    // Logic lấy trạng thái từ DB
+    return "SUCCESS"; // Giả lập, thay bằng dữ liệu thực tế
+}
 
 api.listen(port, () => {
     console.log(`http://localhost:${port}`);
