@@ -370,7 +370,7 @@ export default function ManageGift() {
         <div className="filter-section">
           <select value={filterExpired} onChange={handleFilterChange} className="filter-select">
             <option value="all">Tất cả</option>
-            <option value="expired">Đã hết hạn</option>
+            <option value="false">Đã hết hạn</option>
           </select>
         </div>
 
@@ -383,7 +383,7 @@ export default function ManageGift() {
                 <th>Ngày Bắt Đầu</th>
                 <th>Ngày Kết Thúc</th>
                 <th>Trạng Thái</th>
-                <th>Hành Động</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -428,7 +428,7 @@ export default function ManageGift() {
         {!loading && filteredGifts.length > 0 && totalPages > 1 && (
           <div className="pagination-container">
             <div className="pagination-info">
-              Trang {currentPage} / {totalPages} (Tổng: {gifts.length * totalPages} items)
+              Trang {currentPage} / {totalPages} (Tổng: {gifts.length} gift code)
             </div>
             
             <div className="pagination-controls">

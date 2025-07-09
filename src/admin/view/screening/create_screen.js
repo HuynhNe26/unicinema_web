@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, query, orderBy, limit } from 'firebase/firestore';
 import {db} from '../../../api/firebase/firebase'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -59,12 +59,26 @@ const CreateScreen = () => {
   fetchAllData();
 }, []);
 
-
+  // Sửa lỗi: Generate ID dựa trên ID cao nhất hiện tại thay vì đếm số lượng
   const generateScreeningId = async () => {
     try {
+      // Lấy tất cả screening và sắp xếp theo ID giảm dần để lấy ID cao nhất
       const querySnapshot = await getDocs(collection(db, "screening"));
-      const count = querySnapshot.size;
-      return `idScreening${(count + 1).toString().padStart(23, '0')}`;
+      let maxNumber = 0;
+      
+      querySnapshot.forEach((doc) => {
+        const id = doc.id;
+        if (id.startsWith('idScreening')) {
+          const numberPart = id.replace('idScreening', '');
+          const number = parseInt(numberPart, 10);
+          if (number > maxNumber) {
+            maxNumber = number;
+          }
+        }
+      });
+      
+      const nextNumber = maxNumber + 1;
+      return `idScreening${nextNumber.toString().padStart(23, '0')}`;
     } catch (error) {
       console.error("Error generating screening ID:", error);
       toast.error("Lỗi hệ thống, vui lòng thử lại!");
@@ -83,8 +97,10 @@ const CreateScreen = () => {
   const handleSubmit = async (e) => {
     setLoading(true);
     e.preventDefault();
+    console.log(newScreen.dateTimeStart, newScreen.dateTimeEnd, newScreen.idMovie, newScreen.idScreenRoom, newScreen.stateScreening);
     if (!newScreen.dateTimeStart || !newScreen.dateTimeEnd || !newScreen.idMovie || !newScreen.idScreenRoom) {
-      toast.success("Vui lòng điền đầy đủ thông tin!");
+      toast.error("Vui lòng điền đầy đủ thông tin!"); // Sửa từ success thành error
+      setLoading(false);
       return;
     }
     const screeningId = await generateScreeningId();
@@ -105,7 +121,8 @@ const CreateScreen = () => {
         dateTimeStart: '',
         dateTimeEnd: '',
         idMovie: '',
-        idScreenRoom: ''
+        idScreenRoom: '',
+        stateScreening: ''
       });
     } catch (error) {
       console.error("Lỗi khi tạo suất chiếu:", error);
@@ -133,7 +150,6 @@ const CreateScreen = () => {
       idMovie: ''
     }));
   };
-
 
   if (loading) {
     return <Loading />;
@@ -211,7 +227,7 @@ const CreateScreen = () => {
           >
             <option value="">Chọn phòng chiếu</option>
             {filteredRooms.map((room) => (
-              <option key={room.id} value={room.idScreenRoom}>
+              <option key={room.id} value={room.id}>
                 {room.nameScreenRoom} - {room.nameTheater}
               </option>
             ))}
