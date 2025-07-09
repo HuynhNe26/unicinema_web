@@ -23,8 +23,12 @@ INSERT INTO admin (id_admin, username, password, email, phoneNumber, birthOfDate
 
 CREATE TABLE comment (
     id_comment INT PRIMARY KEY AUTO_INCREMENT,
-    id_admin INT NOT NULL,
+    idMovie VARCHAR(100) NOT NULL,
+    id_user VARCHAR(100) NOT NULL,
     comment TEXT NOT NULL,
-    dateTimeComment DATETIME NOT NULL,
-    FOREIGN KEY (id_admin) REFERENCES admin(id_admin)
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    dateTimeComment DATETIME NOT NULL
 );
+
+INSERT INTO comment (id_comment, idMovie, id_user, comment, rating, dateTimeComment) VALUES
+(1, 'idMovie0000000000001', 'A3PeXDsUSJcKqQvkuxz1MXjwQRg1', 'Phim như con cặc', '5', '2025-07-05 20:00:00')

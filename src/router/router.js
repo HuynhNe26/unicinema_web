@@ -17,7 +17,7 @@ import CreateGift from '../admin/view/gift/create_gift';
 import ManageGift from '../admin/view/gift/manage_gift';
 import ManagePromotion from '../admin/view/promotion/manage_promotion';
 import CreatePromotion from '../admin/view/promotion/create_promotion';
-
+import ManageComment from '../admin/view/product/manage_comment';
 export default function Router() {
    
 
@@ -35,6 +35,7 @@ export default function Router() {
                     <Route path="manage_product" element={<ManageProduct />} />
                     <Route path="product_details/:id" element={<ProductDetails />} />
                     <Route path="create_product" element={<CreateProduct />} />
+                    <Route path="manage_comment" element={<ManageComment />} />
 
                     {/**Quản lý rạp */}
                     <Route path="manage_theater" element={<ManageTheater />} />

@@ -109,7 +109,7 @@ const NavbarAdmin = () => {
                     { to: 'manage_product', label: 'QUẢN LÝ PHIM' },
                     { to: 'create_product', label: 'THÊM PHIM' },
                     { to: 'manage_product', label: 'LỊCH PHIM' },
-                    { to: 'manage_order_all', label: 'QUẢN LÝ COMMENT PHIM' },
+                    { to: 'manage_comment', label: 'QUẢN LÝ COMMENT PHIM' },
                 ],
             },
             {
