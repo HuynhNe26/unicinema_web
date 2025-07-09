@@ -114,7 +114,9 @@ api.post("/new_admin", async (req, res) => {
     }
 });
 
-api.post('/payment', async (req, res) => {
+const orders = {};
+
+api.post('/payment/:id', async (req, res) => {
     const axios = require('axios');
     const crypto = require('crypto');
 
@@ -123,17 +125,21 @@ api.post('/payment', async (req, res) => {
     const partnerCode = 'MOMO';
     const orderInfo = 'Thanh toán vé phim';
 
-    const redirectUrl = `unicinema://payment-result`; // Deep link của ứng dụng Android
-    const ipnUrl = `unicinema://payment-result`; // URL server để nhận thông báo từ MoMo
-    const requestType = 'payWithMethod'; 
+    const redirectUrl = 'unicinema://payment-result'; // Deep link của ứng dụng Android
+    const ipnUrl = 'unicinema://payment-result'; // URL server để nhận thông báo từ MoMo
+    const requestType = 'captureWallet'; 
 
-    const amount = req.body.amount || '50000'; // Lấy số tiền từ request hoặc mặc định
     const orderId = partnerCode + new Date().getTime();
     const requestId = orderId;
-    const extraData = '';
+    const user = req.params.id; // Lấy giá trị id từ req.params
+    const amount = req.body.amount; // Lấy giá trị amount từ req.body
+    const extraData = req.body.extraData;
     const lang = 'vi';
     const autoCapture = true;
-    const user = '';
+    const desk = req.body.idDesk || [];
+    const movie = req.body.movie;
+    const screenRoom = req.body.screenRoom;
+    const dateTime = req.body.dateTime;
 
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
     
@@ -162,7 +168,6 @@ api.post('/payment', async (req, res) => {
         autoCapture: autoCapture,
         extraData : extraData,
         signature : signature,
-        user: user,
     });
 
     const options = {
@@ -175,16 +180,38 @@ api.post('/payment', async (req, res) => {
         data: requestBody
     };
 
+    console.log(orderId,
+            amount,
+            user,
+            desk,
+            movie,
+        screenRoom,
+    dateTime)
+
     try {
         const result = await axios(options);
+
+        orders[orderId] = {
+            status: 'SUCCESS',
+            user,
+            amount,
+            desk,
+            movie,
+            screenRoom,
+            dateTime
+        };
 
         // Trả về payUrl từ response của MoMo
         return res.status(200).json({
             payUrl: result.data.payUrl,
             orderId,
-            amount // ← thêm dòng này
+            amount,
+            user,
+            desk,
+            movie,
+            screenRoom,
+            dateTime
         });
-
 
     } catch (error) {
         console.error('Error calling MoMo API:', error.message);
@@ -198,21 +225,34 @@ api.post('/payment', async (req, res) => {
 api.post('/payment/ipn', (req, res) => {
     const data = req.body;
 
-    // TODO: Xác minh chữ ký MoMo để tránh giả mạo (sử dụng secretKey)
-    // Sau đó, cập nhật trạng thái đơn hàng trong DB
-
     console.log("IPN từ MoMo:", data);
 
-    // Giả sử xử lý xong
     res.status(200).send('IPN received');
 });
 
 
-api.get('/payment/check-order-status', async (req, res) => {
-    const orderId = req.query.orderId;
-    // Kiểm tra order trong DB và trả về status
-    res.json({ status: "SUCCESS", orderId }); // hoặc FAILED, PENDING...
+api.get('/payment/check-order-status', (req, res) => {
+    const { orderId } = req.query;
+    if (!orderId || !orders[orderId]) {
+        return res.status(404).json({
+            statusCode: 404,
+            message: 'Không tìm thấy đơn hàng'
+        });
+    }
+
+    const order = orders[orderId];
+    return res.status(200).json({
+        statusCode: 200,
+        status: order.status,
+        user: order.user,
+        amount: order.amount,
+        desk: order.desk,
+        movie: order.movie,
+        screenRoom: order.screenRoom,
+        dateTime: order.dateTime
+    });
 });
+
 
 
 api.listen(port, () => {
