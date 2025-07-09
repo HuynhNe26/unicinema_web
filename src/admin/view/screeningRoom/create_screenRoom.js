@@ -47,21 +47,24 @@ const CreateScreenRoom = () => {
     }
   };
 
-  const generateDesks = (screenRoomId) => {
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
-    const desks = [];
+ const generateDesks = (screenRoomId) => {
+  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const desks = [];
 
-    rows.forEach(row => {
-      for (let i = 1; i <= 14; i++) {
-        const deskId = `idDesk${row}${i.toString().padStart(2, '0')}`;
-        desks.push({
-          id: deskId,
-          available: true
-        });
-      }
-    });
-    return desks;
-  };
+  rows.forEach(row => {
+    // Hàng J chỉ có 7 ghế, các hàng khác có 14 ghế
+    const seatCount = row === 'J' ? 7 : 14;
+    
+    for (let i = 1; i <= seatCount; i++) {
+      const deskId = `idDesk${row}${i.toString().padStart(2, '0')}`;
+      desks.push({
+        id: deskId,
+        available: true
+      });
+    }
+  });
+  return desks;
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -97,7 +100,7 @@ const CreateScreenRoom = () => {
         idScreenRoom: '',
         idTheater: newRoom.idTheater,
         nameScreenRoom: '',
-        quantityDesk: 140,
+        quantityDesk: 119,
         stateScreenRoom: '',
         active: true
       });
@@ -168,7 +171,7 @@ const CreateScreenRoom = () => {
             name="quantityDesk"
             value={newRoom.quantityDesk}
             readOnly
-            placeholder="140 (cố định)"
+            placeholder="119 (cố định)"
             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
           />
         </div>

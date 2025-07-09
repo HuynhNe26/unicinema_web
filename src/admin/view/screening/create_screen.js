@@ -97,9 +97,9 @@ const CreateScreen = () => {
   const handleSubmit = async (e) => {
     setLoading(true);
     e.preventDefault();
-    console.log(newScreen.dateTimeStart, newScreen.dateTimeEnd, newScreen.idMovie, newScreen.idScreenRoom, newScreen.stateScreening);
+
     if (!newScreen.dateTimeStart || !newScreen.dateTimeEnd || !newScreen.idMovie || !newScreen.idScreenRoom) {
-      toast.error("Vui lòng điền đầy đủ thông tin!"); // Sửa từ success thành error
+      toast.error("Vui lòng điền đầy đủ thông tin!"); 
       setLoading(false);
       return;
     }
