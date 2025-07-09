@@ -132,7 +132,8 @@ const CreateProduct = () => {
         timeMovie: "",
         trailer: "",
         dateTimeStart: "", // Reset trường mới
-        dateTimeEnd: ""    // Reset trường mới
+        dateTimeEnd: "",    // Reset trường mới
+        point: 0
       }));
     } catch (error) {
       console.error("Error uploading data: ", error);
@@ -165,7 +166,6 @@ const CreateProduct = () => {
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
           }
 
           .form-card {

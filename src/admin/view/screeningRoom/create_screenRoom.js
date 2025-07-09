@@ -11,7 +11,7 @@ const CreateScreenRoom = () => {
     idScreenRoom: '',
     idTheater: '',
     nameScreenRoom: '',
-    quantityDesk: 140,
+    quantityDesk: 119,
     stateScreenRoom: '',
     active: true
   });
@@ -47,23 +47,24 @@ const CreateScreenRoom = () => {
     }
   };
 
-  const generateDesks = (screenRoomId) => {
-    const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'J', 'K'];
-    const desks = [];
+ const generateDesks = (screenRoomId) => {
+  const rows = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+  const desks = [];
 
-    rows.forEach(row => {
-      for (let i = 1; i <= 14; i++) {
-        const deskId = `idDesk${row}${i.toString().padStart(2, '0')}`;
-        desks.push({
-          id: deskId,
-          row: row,
-          seat: i.toString().padStart(2, '0'),
-          available: true
-        });
-      }
-    });
-    return desks;
-  };
+  rows.forEach(row => {
+    // Hàng J chỉ có 7 ghế, các hàng khác có 14 ghế
+    const seatCount = row === 'J' ? 7 : 14;
+    
+    for (let i = 1; i <= seatCount; i++) {
+      const deskId = `idDesk${row}${i.toString().padStart(2, '0')}`;
+      desks.push({
+        id: deskId,
+        available: true
+      });
+    }
+  });
+  return desks;
+};
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -74,6 +75,7 @@ const CreateScreenRoom = () => {
   };
 
   const handleSubmit = async (e) => {
+    setLoading(true);
     e.preventDefault();
     if (!newRoom.idTheater || !newRoom.nameScreenRoom || !newRoom.stateScreenRoom) {
       toast.error("Vui lòng điền đầy đủ thông tin!!");
@@ -82,14 +84,13 @@ const CreateScreenRoom = () => {
     const screenRoomId = await generateSequentialId();
     const roomData = { ...newRoom, idScreenRoom: screenRoomId };
     try {
-      const screenRoomRef = await addDoc(collection(db, "screeningRoom"), roomData);
+      const screenRoomRef = doc(db, "screeningRoom", screenRoomId);
+        await setDoc(screenRoomRef, roomData);
 
       const deskCollectionRef = collection(db, "screeningRoom", screenRoomId, "desk");
       const desks = generateDesks(screenRoomId);
       for (const desk of desks) {
         await setDoc(doc(deskCollectionRef, desk.id), {
-          row: desk.row,
-          seat: desk.seat,
           available: desk.available
         });
       }
@@ -99,13 +100,15 @@ const CreateScreenRoom = () => {
         idScreenRoom: '',
         idTheater: newRoom.idTheater,
         nameScreenRoom: '',
-        quantityDesk: 140,
+        quantityDesk: 119,
         stateScreenRoom: '',
         active: true
       });
     } catch (error) {
       console.error("Lỗi khi tạo phòng chiếu hoặc ghế:", error);
       toast.error("Không thể tạo phòng chiếu hoặc ghế. Vui lòng thử lại!");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -115,7 +118,6 @@ const CreateScreenRoom = () => {
 
   return (
     <div style={{
-      padding: '20px',
       maxWidth: '600px',
       margin: '0 auto'
     }}>
@@ -169,7 +171,7 @@ const CreateScreenRoom = () => {
             name="quantityDesk"
             value={newRoom.quantityDesk}
             readOnly
-            placeholder="140 (cố định)"
+            placeholder="119 (cố định)"
             style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
           />
         </div>
@@ -192,7 +194,8 @@ const CreateScreenRoom = () => {
             backgroundColor: '#1da1f2',
             color: 'white',
             border: 'none',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            marginLeft: '220px'
           }}
           onMouseOver={(e) => e.target.style.backgroundColor = '#1a91da'}
           onMouseOut={(e) => e.target.style.backgroundColor = '#1da1f2'}

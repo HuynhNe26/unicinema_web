@@ -8,89 +8,92 @@ import 'react-toastify/dist/ReactToastify.css';
 export default function ManageGift() {
   const [gifts, setGifts] = useState([]);
   const [filteredGifts, setFilteredGifts] = useState([]);
-  const [lastDoc, setLastDoc] = useState(null);
   const [filterExpired, setFilterExpired] = useState("all");
-  const [page, setPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const [showDetails, setShowDetails] = useState(null);
   const [error, setError] = useState(null);
-  const giftsPerPage = 5;
+  const giftsPerPage = 20;
 
+  // Fetch gifts với phân trang
   useEffect(() => {
-    let isMounted = true;
+    fetchGifts();
+  }, [filterExpired, currentPage]);
 
-    const fetchGifts = async () => {
-      if (!hasMore || loading) return;
-      setLoading(true);
-      setError(null);
+  const fetchGifts = async () => {
+    setLoading(true);
+    setError(null);
 
+    try {
+      // Tính toán offset cho phân trang
+      const offset = (currentPage - 1) * giftsPerPage;
+      
       let q = query(collection(db, "discounts"), orderBy("dateTimeEnd"), limit(giftsPerPage));
-
-      if (lastDoc) {
-        q = query(collection(db, "discounts"), orderBy("dateTimeEnd"), startAfter(lastDoc), limit(giftsPerPage));
+      
+      // Nếu không phải trang đầu, cần skip các documents trước đó
+      if (offset > 0) {
+        // Lấy documents để skip
+        const skipQuery = query(collection(db, "discounts"), orderBy("dateTimeEnd"), limit(offset));
+        const skipSnapshot = await getDocs(skipQuery);
+        if (skipSnapshot.docs.length > 0) {
+          const lastSkipDoc = skipSnapshot.docs[skipSnapshot.docs.length - 1];
+          q = query(collection(db, "discounts"), orderBy("dateTimeEnd"), startAfter(lastSkipDoc), limit(giftsPerPage));
+        }
       }
 
+      // Áp dụng filter nếu có
       if (filterExpired === "expired") {
-        const now = new Date(); // Thời gian động: 12:33 PM +07, July 07, 2025
+        const now = new Date();
         q = query(q, where("dateTimeEnd", "<", now), where("stateDiscount", "==", false));
       }
 
-      try {
-        const querySnapshot = await getDocs(q);
-        const giftList = querySnapshot.docs.map((doc) => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            ...data,
-            // Chuyển đổi dateTimeStart và dateTimeEnd thành Date nếu là Timestamp
-            dateTimeStart: data.dateTimeStart instanceof Object ? data.dateTimeStart.toDate() : new Date(data.dateTimeStart),
-            dateTimeEnd: data.dateTimeEnd instanceof Object ? data.dateTimeEnd.toDate() : new Date(data.dateTimeEnd)
-          };
-        });
-        console.log("Fetched gifts:", giftList); // Debug: Xem dữ liệu được tải
-        if (isMounted) {
-          setGifts((prev) => {
-            const newGifts = lastDoc ? [...prev, ...giftList] : giftList;
-            return newGifts;
-          });
-          setFilteredGifts(lastDoc ? [...filteredGifts, ...giftList] : giftList);
-          setLastDoc(querySnapshot.docs[querySnapshot.docs.length - 1] || null);
-          setHasMore(giftList.length === giftsPerPage);
-        }
-      } catch (error) {
-        console.error("Lỗi khi lấy gift code:", error);
-        toast.error("Không thể tải danh sách gift code. Vui lòng thử lại.");
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
+      const querySnapshot = await getDocs(q);
+      const giftList = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          ...data,
+          dateTimeStart: data.dateTimeStart instanceof Object ? data.dateTimeStart.toDate() : new Date(data.dateTimeStart),
+          dateTimeEnd: data.dateTimeEnd instanceof Object ? data.dateTimeEnd.toDate() : new Date(data.dateTimeEnd)
+        };
+      });
 
-    fetchGifts();
+      // Tính tổng số trang
+      const totalCountQuery = query(collection(db, "discounts"));
+      const totalCountSnapshot = await getDocs(totalCountQuery);
+      const totalCount = totalCountSnapshot.size;
+      const calculatedTotalPages = Math.ceil(totalCount / giftsPerPage);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [filterExpired, lastDoc, hasMore]);
-
-  const handleLoadMore = () => {
-    if (!loading && hasMore) {
-      setPage((prev) => prev + 1);
+      setGifts(giftList);
+      setFilteredGifts(giftList);
+      setTotalPages(calculatedTotalPages);
+      
+    } catch (error) {
+      console.error("Lỗi khi lấy gift code:", error);
+      toast.error("Không thể tải danh sách gift code. Vui lòng thử lại.");
+      setError("Không thể tải danh sách gift code.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleFilterChange = (e) => {
     setFilterExpired(e.target.value);
-    setPage(1);
-    setGifts([]);
-    setLastDoc(null);
-    setHasMore(true);
+    setCurrentPage(1);
     setShowDetails(null);
     setError(null);
   };
 
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+      setCurrentPage(page);
+      setShowDetails(null);
+    }
+  };
+
   const isExpired = (endDate) => {
-    const now = new Date(); // Thời gian động: 12:33 PM +07, July 07, 2025
+    const now = new Date();
     return new Date(endDate) < now;
   };
 
@@ -104,8 +107,9 @@ export default function ManageGift() {
         setLoading(true);
         setError(null);
         await deleteDoc(doc(db, "discounts", id));
-        setGifts(gifts.filter(gift => gift.id !== id));
-        setFilteredGifts(filteredGifts.filter(gift => gift.id !== id));
+        
+        // Refresh lại trang hiện tại sau khi xóa
+        await fetchGifts();
         setShowDetails(null);
         toast.success("Xóa gift code thành công!");
       } catch (error) {
@@ -127,6 +131,39 @@ export default function ManageGift() {
       minute: "2-digit",
       second: "2-digit",
     });
+  };
+
+  // Tạo array cho pagination buttons
+  const getPaginationButtons = () => {
+    const buttons = [];
+    const maxVisibleButtons = 5;
+    
+    if (totalPages <= maxVisibleButtons) {
+      // Nếu tổng số trang ít hơn hoặc bằng maxVisibleButtons
+      for (let i = 1; i <= totalPages; i++) {
+        buttons.push(i);
+      }
+    } else {
+      // Nếu tổng số trang nhiều hơn maxVisibleButtons
+      const start = Math.max(1, currentPage - Math.floor(maxVisibleButtons / 2));
+      const end = Math.min(totalPages, start + maxVisibleButtons - 1);
+      
+      if (start > 1) {
+        buttons.push(1);
+        if (start > 2) buttons.push('...');
+      }
+      
+      for (let i = start; i <= end; i++) {
+        buttons.push(i);
+      }
+      
+      if (end < totalPages) {
+        if (end < totalPages - 1) buttons.push('...');
+        buttons.push(totalPages);
+      }
+    }
+    
+    return buttons;
   };
 
   if (loading) {
@@ -156,7 +193,6 @@ export default function ManageGift() {
         {`
           .manage-gift-container {
             min-height: 100vh;
-            padding: 20px;
             font-family: Arial, sans-serif;
           }
 
@@ -236,25 +272,6 @@ export default function ManageGift() {
             color: #666;
           }
 
-          .load-more {
-            text-align: center;
-            margin-top: 20px;
-          }
-
-          .load-more-btn {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 1rem;
-          }
-
-          .load-more-btn:hover {
-            background-color: #0056b3;
-          }
-
           .delete-btn {
             padding: 8px 12px;
             background-color: #dc3545;
@@ -268,17 +285,95 @@ export default function ManageGift() {
           .delete-btn:hover {
             background-color: #c82333;
           }
+
+          /* Pagination Styles */
+          .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            gap: 10px;
+          }
+
+          .pagination-info {
+            font-size: 0.9rem;
+            color: #666;
+            margin-right: 20px;
+          }
+
+          .pagination-controls {
+            display: flex;
+            gap: 5px;
+          }
+
+          .pagination-btn {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            background-color: #fff;
+            color: #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+          }
+
+          .pagination-btn:hover {
+            background-color: #f8f9fa;
+            border-color: #007bff;
+          }
+
+          .pagination-btn.active {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+          }
+
+          .pagination-btn:disabled {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            border-color: #ddd;
+            cursor: not-allowed;
+          }
+
+          .pagination-btn:disabled:hover {
+            background-color: #f8f9fa;
+            border-color: #ddd;
+          }
+
+          .pagination-ellipsis {
+            padding: 8px 12px;
+            color: #6c757d;
+            font-size: 0.9rem;
+          }
+
+          @media (max-width: 768px) {
+            .pagination-container {
+              flex-direction: column;
+              gap: 15px;
+            }
+
+            .pagination-info {
+              margin-right: 0;
+            }
+
+            .pagination-controls {
+              flex-wrap: wrap;
+              justify-content: center;
+            }
+          }
         `}
       </style>
       <div className="manage-gift-container">
         <ToastContainer />
         <h2 className="manage-gift-title">Quản Lý Gift Code</h2>
+        
         <div className="filter-section">
           <select value={filterExpired} onChange={handleFilterChange} className="filter-select">
             <option value="all">Tất cả</option>
-            <option value="expired">Đã hết hạn</option>
+            <option value="false">Đã hết hạn</option>
           </select>
         </div>
+
         <div className="gift-table-container">
           <table className="gift-table">
             <thead>
@@ -288,13 +383,13 @@ export default function ManageGift() {
                 <th>Ngày Bắt Đầu</th>
                 <th>Ngày Kết Thúc</th>
                 <th>Trạng Thái</th>
-                <th>Hành Động</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
               {filteredGifts.map((gift, index) => (
                 <tr key={gift.id} onClick={() => handleShowDetails(gift.id)}>
-                  <td>{(page - 1) * giftsPerPage + index + 1}</td>
+                  <td>{(currentPage - 1) * giftsPerPage + index + 1}</td>
                   <td>{gift.code || "N/A"}</td>
                   <td>{formatDateTime(gift.dateTimeStart)}</td>
                   <td>{formatDateTime(gift.dateTimeEnd)}</td>
@@ -303,7 +398,7 @@ export default function ManageGift() {
                     <button
                       className="delete-btn"
                       onClick={(e) => {
-                        e.stopPropagation(); // Ngăn click vào hàng kích hoạt showDetails
+                        e.stopPropagation();
                         handleDelete(gift.id);
                       }}
                     >
@@ -314,7 +409,11 @@ export default function ManageGift() {
               ))}
             </tbody>
           </table>
-          {!loading && filteredGifts.length === 0 && <div className="no-data">Không có gift code.</div>}
+          
+          {!loading && filteredGifts.length === 0 && (
+            <div className="no-data">Không có gift code.</div>
+          )}
+          
           {showDetails && filteredGifts.find((gift) => gift.id === showDetails) && (
             <div className="details">
               <p><strong>ID User:</strong> {filteredGifts.find((gift) => gift.id === showDetails).idUser || "N/A"}</p>
@@ -324,11 +423,45 @@ export default function ManageGift() {
             </div>
           )}
         </div>
-        {!loading && filteredGifts.length > 0 && filteredGifts.length % giftsPerPage === 0 && hasMore && (
-          <div className="load-more">
-            <button onClick={handleLoadMore} className="load-more-btn">
-              Tải thêm
-            </button>
+
+        {/* Pagination */}
+        {!loading && filteredGifts.length > 0 && totalPages > 1 && (
+          <div className="pagination-container">
+            <div className="pagination-info">
+              Trang {currentPage} / {totalPages} (Tổng: {gifts.length} gift code)
+            </div>
+            
+            <div className="pagination-controls">
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                « Trước
+              </button>
+              
+              {getPaginationButtons().map((button, index) => (
+                button === '...' ? (
+                  <span key={index} className="pagination-ellipsis">...</span>
+                ) : (
+                  <button
+                    key={index}
+                    className={`pagination-btn ${currentPage === button ? 'active' : ''}`}
+                    onClick={() => handlePageChange(button)}
+                  >
+                    {button}
+                  </button>
+                )
+              ))}
+              
+              <button
+                className="pagination-btn"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Tiếp »
+              </button>
+            </div>
           </div>
         )}
       </div>

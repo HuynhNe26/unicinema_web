@@ -11,6 +11,9 @@ export default function ManageUser() {
     const [memberships, setMemberships] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [usersPerPage] = useState(10);
+    const [searchTerm, setSearchTerm] = useState('');
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -18,7 +21,7 @@ export default function ManageUser() {
             setError('');
             setLoading(true);
             try {
-                // Lấy dữ liệu từ collection 'users'
+                // Fetch users data
                 const usersQuerySnapshot = await getDocs(collection(db, 'users'));
                 const usersData = usersQuerySnapshot.docs.map(doc => {
                     const data = doc.data();
@@ -35,7 +38,7 @@ export default function ManageUser() {
                 });
                 setUsers(usersData);
 
-                // Lấy dữ liệu từ collection 'memberShip'
+                // Fetch memberships data
                 const membershipsQuerySnapshot = await getDocs(collection(db, 'memberShip'));
                 const membershipsData = membershipsQuerySnapshot.docs.map(doc => {
                     const data = doc.data();
@@ -58,50 +61,107 @@ export default function ManageUser() {
         fetchData();
     }, []);
 
+    // Filter users based on search term (email)
+    const filteredUsers = users.filter(user =>
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Calculate pagination for filtered users
+    const indexOfLastUser = currentPage * usersPerPage;
+    const indexOfFirstUser = indexOfLastUser - usersPerPage;
+    const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+
+    // Handle page change
+    const paginate = (pageNumber) => {
+        if (pageNumber >= 1 && pageNumber <= totalPages) {
+            setCurrentPage(pageNumber);
+        }
+    };
+
+    // Handle search input change
+    const handleSearch = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1); // Reset to first page when searching
+    };
+
     if (loading) {
-        return <Loading />; // Sử dụng component Loading thay vì div
+        return <Loading />;
     }
 
     return (
         <div className="manage-user-container">
             <ToastContainer />
-            <h2>Quản Lý Người Dùng</h2>
+            <div style={{display: 'flex'}}>
+                <h2>Quản Lý Người Dùng</h2>
+                <div className="search-container">
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm theo Gmail..."
+                        value={searchTerm}
+                        onChange={handleSearch}
+                        className="search-input"
+                    />
+                </div>
+            </div>
             {error && <div className="error">{error}</div>}
-            {users.length === 0 && !error ? (
-                <p>Không có người dùng nào.</p>
+            {filteredUsers.length === 0 && !error ? (
+                <p>Không tìm thấy người dùng nào.</p>
             ) : (
-                <table className="user-table">
-                    <thead>
-                        <tr>
-                            <th>STT</th>
-                            <th>Họ và tên</th>
-                            <th>Ngày hết hạn thành viên</th>
-                            <th>Ngày bắt đầu thành viên</th>
-                            <th>Email</th>
-                            <th>Địa chỉ</th>
-                            <th>Hạng Thành Viên</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.map((user, index) => {
-                            // Tìm membership có id khớp với idMemberShip của user
-                            const matchingMembership = memberships.find(m => m.id === user.idMemberShip);
-                            const membershipName = matchingMembership ? matchingMembership.nameMemberShip : 'N/A';
+                <>
+                    <table className="user-table">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Họ và tên</th>
+                                <th>Ngày hết hạn thành viên</th>
+                                <th>Ngày bắt đầu thành viên</th>
+                                <th>Email</th>
+                                <th>Địa chỉ</th>
+                                <th>Hạng Thành Viên</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {currentUsers.map((user, index) => {
+                                const matchingMembership = memberships.find(m => m.id === user.idMemberShip);
+                                const membershipName = matchingMembership ? matchingMembership.nameMemberShip : 'N/A';
 
-                            return (
-                                <tr key={user.id}>
-                                    <td>{index + 1}</td>
-                                    <td>{user.full_name || 'N/A'}</td>
-                                    <td>{user.dateEnd ? new Date(user.dateEnd).toLocaleString() : 'N/A'}</td>
-                                    <td>{user.dateStart ? new Date(user.dateStart).toLocaleString() : 'N/A'}</td>
-                                    <td>{user.email || 'N/A'}</td>
-                                    <td>{user.address || 'N/A'}</td>
-                                    <td>{membershipName}</td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                return (
+                                    <tr key={user.id}>
+                                        <td>{indexOfFirstUser + index + 1}</td>
+                                        <td>{user.full_name || 'N/A'}</td>
+                                        <td>{user.dateEnd ? new Date(user.dateEnd).toLocaleString() : 'N/A'}</td>
+                                        <td>{user.dateStart ? new Date(user.dateStart).toLocaleString() : 'N/A'}</td>
+                                        <td>{user.email || 'N/A'}</td>
+                                        <td>{user.address || 'N/A'}</td>
+                                        <td>{membershipName}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+
+                    {/* Pagination Controls */}
+                    <div className="pagination">
+                        <button
+                            onClick={() => paginate(currentPage - 1)}
+                            disabled={currentPage === 1}
+                            className="pagination-button"
+                        >
+                            Trước
+                        </button>
+                        <span className="pagination-info">
+                            Trang {currentPage} / {totalPages}
+                        </span>
+                        <button
+                            onClick={() => paginate(currentPage + 1)}
+                            disabled={currentPage === totalPages}
+                            className="pagination-button"
+                        >
+                            Sau
+                        </button>
+                    </div>
+                </>
             )}
 
             <style>{`
@@ -123,6 +183,25 @@ export default function ManageUser() {
                     color: red;
                     text-align: center;
                     margin-bottom: 20px;
+                }
+
+                .search-container {
+                    margin-left: 300px;
+                    margin-bottom: 20px;
+                    text-align: center;
+                }
+
+                .search-input {
+                    padding: 10px;
+                    width: 300px;
+                    border: 1px solid #ddd;
+                    border-radius: 5px;
+                    font-size: 16px;
+                }
+
+                .search-input:focus {
+                    outline: none;
+                    border-color: #002856;
                 }
 
                 .user-table {
@@ -148,6 +227,39 @@ export default function ManageUser() {
 
                 .user-table tr:hover {
                     background: #f5f5f5;
+                }
+
+                .pagination {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    margin-top: 20px;
+                    gap: 10px;
+                }
+
+                .pagination-button {
+                    padding: 8px 16px;
+                    border: 1px solid #002856;
+                    background: #FFFFFF;
+                    color: #002856;
+                    border-radius: 5px;
+                    cursor: pointer;
+                }
+
+                .pagination-button:disabled {
+                    background: #f5f5f5;
+                    color: #aaa;
+                    cursor: not-allowed;
+                }
+
+                .pagination-button:hover:not(:disabled) {
+                    background: #002856;
+                    color: #FFFFFF;
+                }
+
+                .pagination-info {
+                    font-size: 16px;
+                    color: #002856;
                 }
             `}</style>
         </div>

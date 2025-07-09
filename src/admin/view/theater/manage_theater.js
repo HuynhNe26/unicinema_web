@@ -79,7 +79,7 @@ export default function ManageTheater() {
     return (
         <div className="manage-user-container">
             <ToastContainer />
-            <h2>Quản Lý rạp</h2>
+            <h1>Quản Lý rạp</h1>
             {error && <div className="error">{error}</div>}
             {theaters.length === 0 && !error ? (
                 <p>Không có rạp nào.</p>
@@ -101,7 +101,7 @@ export default function ManageTheater() {
                                 <td>{theater.nameTheater}</td>
                                 <td>{theater.nameProvince}</td>
                                 <td>{theater.addressTheater}</td>
-                                <td>
+                                <td style={{display: 'flex'}}>
                                     <button
                                         onClick={() => handleViewOnMap(theater.latitude, theater.longitude)}
                                         style={{ marginRight: '10px' }}
@@ -126,11 +126,10 @@ export default function ManageTheater() {
                     border-radius: 10px;
                     max-width: 1200px;
                     margin: 20px auto;
-                    padding: 20px;
                     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
                 }
 
-                h2 {
+                h1 {
                     color: #002856;
                     margin-bottom: 20px;
                     text-align: center;

@@ -109,7 +109,7 @@ const NavbarAdmin = () => {
                     { to: 'manage_product', label: 'QUẢN LÝ PHIM' },
                     { to: 'create_product', label: 'THÊM PHIM' },
                     { to: 'manage_product', label: 'LỊCH PHIM' },
-                    { to: 'manage_comment', label: 'QUẢN LÝ COMMENT PHIM' },
+                    { to: 'manage_order_all', label: 'QUẢN LÝ COMMENT PHIM' },
                 ],
             },
             {
@@ -139,8 +139,8 @@ const NavbarAdmin = () => {
             {
                 section: 'Báo cáo',
                 items: [
-                    { to: 'manage_report', label: 'BÁO CÁO DOANH THU' },
-                    { to: 'manage_order_all', label: 'BÁO CÁO NHÂN VIÊN' },
+                    { to: 'report_revenue', label: 'BÁO CÁO DOANH THU' },
+                    { to: 'report_admin', label: 'BÁO CÁO NHÂN VIÊN' },
                 ],
             },
         ],
@@ -228,25 +228,6 @@ const NavbarAdmin = () => {
             </div>
 
             <div className="main-container">
-                <div className="header"></div>
-                <div className="layout">
-                    <div className="button" onClick={() => navigate('/admin/manage_product')}>
-                        <div className="text">
-                            <div>Quản lý sản phẩm</div>
-                        </div>
-                    </div>
-                    <div className="button" onClick={() => navigate('/admin/manage_order')}>
-                        <div className="text">
-                            <div>Quản lý đơn hàng</div>
-                        </div>
-                    </div>
-                    <div className="button" onClick={() => navigate('/admin/manage_user')}>
-                        <div className="text">
-                            <div>Quản lý người dùng</div>
-                        </div>
-                    </div>
-                </div>
-
                 <div className="main_content">
                     <main>
                         <Outlet />

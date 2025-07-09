@@ -155,7 +155,7 @@ export default function CreateGift() {
     return (
       <div className="p-4">
         <ToastContainer style={{zIndex: '100'}} />
-        <h2 className="text-xl font-bold mb-4">Tạo Voucher</h2>
+        <h2 className="text-xl font-bold mb-4">Tạo Gift Code</h2>
         <p style={{ color: "red", textAlign: "center" }}>{error}</p>
         <div style={{ textAlign: "center" }}>
           <button
@@ -175,7 +175,6 @@ export default function CreateGift() {
         {`
           .p-4 {
             min-height: 100vh;
-            padding: 20px;
             font-family: Arial, sans-serif;
           }
 
@@ -256,7 +255,7 @@ export default function CreateGift() {
           }
         `}
       </style>
-      <h2 className="text-xl font-bold mb-4">Tạo Voucher</h2>
+      <h2 className="text-xl font-bold mb-4">Tạo Gift Code</h2>
       <div className="space-y-4">
         <input
           type="email"

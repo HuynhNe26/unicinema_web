@@ -93,7 +93,6 @@ export default function CreateTheater() {
             <style>
                 {`
                     .create-theater-container {
-                        padding: 20px;
                         max-width: 500px;
                         margin: 0 auto;
                     }

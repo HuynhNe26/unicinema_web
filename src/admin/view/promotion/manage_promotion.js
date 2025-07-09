@@ -117,8 +117,8 @@ export default function ManagePromotion() {
 
     if (error) {
         return (
-            <div style={{ padding: "20px" }}>
-                <h2>Quản lý Khuyến mãi</h2>
+            <div>
+                <h1 style={{ textAlign: 'center'}}>Quản lý Khuyến mãi</h1>
                 <p style={{ color: "red" }}>{error}</p>
                 <button
                     style={{ marginBottom: "20px" }}
@@ -131,17 +131,17 @@ export default function ManagePromotion() {
     }
 
     return (
-        <div style={{ padding: "20px" }}>
+        <div>
             <ToastContainer />
-            <h2>Quản lý Khuyến mãi</h2>
-            <button style={{ marginBottom: "20px" }} onClick={() => navigate('../create_promotion')}>
+            <h1 style={{ textAlign: 'center'}}>Quản lý Khuyến mãi</h1>
+            <button style={{ marginBottom: "20px", width: '200px', height: '40px' }} onClick={() => navigate('../create_promotion')}>
                 Tạo khuyến mãi
             </button>
             {promotions.length === 0 && <p>Không có khuyến mãi nào.</p>}
             {promotions.map((promo) => (
                 <div key={promo.id} style={{ border: "1px solid #ccc", padding: "10px", marginBottom: "10px" }}>
                     <a href={promo.bannerImage} style={{ color: "red", textDecoration: "none" }} target="_blank" rel="noopener noreferrer">
-                        Hình ảnh
+                        Hình ảnh (Vui lòng click vào để xem!)
                     </a>
                     <p>Tiêu đề: {promo.title || "N/A"}</p>
                     <p>Mô tả: {promo.description || "N/A"}</p>
