@@ -98,16 +98,12 @@ api.get('/manage_admin', async (req, res) => {
         const [rows] = await db.query('SELECT * FROM admin');
         res.status(200).json(rows);
     } catch (error) {
-<<<<<<< HEAD
         console.error('Error fetching admins:', error.message);
-=======
         console.error('Lỗi lấy dữ liệu admin', error);
->>>>>>> 4091540b4479460000ca5b0f2f66733f675b07c0
         res.status(500).json({ message: 'Lỗi server khi lấy danh sách quản trị viên' });
     }
 });
 
-<<<<<<< HEAD
 // Create a comment
 api.post('/comments', verifyToken, async (req, res) => {
     try {
@@ -191,7 +187,6 @@ api.put('/comments/:id', verifyToken, async (req, res) => {
     }
 });
 
-=======
 api.post("/new_admin", async (req, res) => {
     const { username, password, fullname, email, phoneNumber, birthOfDate, address, level, role } = req.body;
 
@@ -365,7 +360,6 @@ api.get('/payment/check-order-status', (req, res) => {
 
 
 
->>>>>>> 4091540b4479460000ca5b0f2f66733f675b07c0
 api.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });

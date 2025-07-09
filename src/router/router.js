@@ -17,16 +17,13 @@ import CreateGift from '../admin/view/gift/create_gift';
 import ManageGift from '../admin/view/gift/manage_gift';
 import ManagePromotion from '../admin/view/promotion/manage_promotion';
 import CreatePromotion from '../admin/view/promotion/create_promotion';
-<<<<<<< HEAD
 import ManageComment from '../admin/view/product/manage_comment';
-=======
 import MovieCalendar from '../admin/view/product/calendar';
 import ReportAdmin from '../admin/view/report/report_admin';
 import ReportRevenue from '../admin/view/report/report_revenue';
 import ScreenRoom from '../admin/view/screeningRoom/screeningRoom';
 import Page404 from '../admin/components/404/Page404';
 
->>>>>>> 4091540b4479460000ca5b0f2f66733f675b07c0
 export default function Router() {
    
 
@@ -44,11 +41,8 @@ export default function Router() {
                     <Route path="manage_product" element={<ManageProduct />} />
                     <Route path="product_details/:id" element={<ProductDetails />} />
                     <Route path="create_product" element={<CreateProduct />} />
-<<<<<<< HEAD
                     <Route path="manage_comment" element={<ManageComment />} />
-=======
                     <Route path="calendar_movie" element={<MovieCalendar />} />
->>>>>>> 4091540b4479460000ca5b0f2f66733f675b07c0
 
                     {/**Quản lý rạp */}
                     <Route path="manage_theater" element={<ManageTheater />} />
