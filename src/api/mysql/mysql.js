@@ -5,6 +5,8 @@ const port = 5000;
 const db = require('../../config/db_mysql');
 const jwt = require('jsonwebtoken');
 const { messaging } = require('firebase-admin');
+const axios = require('axios');
+const crypto = require('crypto');
 
 api.use(cors());
 api.use(express.json());
@@ -20,7 +22,6 @@ api.post("/login", async (req, res) => {
             return res.status(400).json({ message: "Vui lòng nhập mật khẩu!" });
         }
 
-        // Select id_admin and level along with username and password
         const [rows] = await db.query(
             "SELECT id_admin, username, password, level FROM admin WHERE username = ? AND password = ?",
             [username, password]
@@ -85,19 +86,16 @@ api.post("/new_admin", async (req, res) => {
     const { username, password, fullname, email, phoneNumber, birthOfDate, address, level, role } = req.body;
 
     try {
-        // Kiểm tra đầy đủ thông tin
         if (!username || !password || !fullname || !email || !phoneNumber || !birthOfDate || !address || !level || !role) {
             return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin!" });
         }
 
-        // Kiểm tra trùng lặp username
         const [check] = await db.query('SELECT username FROM admin WHERE username = ? AND level = ?', [username, level]);
         if (check.length > 0) {
             return res.status(400).json({ message: "Tên đăng nhập đã tồn tại!" });
         } else {
             const state = 'Tài khoản mới';
 
-            // Thêm quản trị viên
             const [rows] = await db.query(
                 `INSERT INTO admin (username, password, fullname, email, phoneNumber, birthOfDate, address, level, role, state, dateTimeLogin, dateTimeLogout) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
@@ -105,7 +103,7 @@ api.post("/new_admin", async (req, res) => {
             );
 
             if (rows.affectedRows > 0) {
-                return res.status(201).json({ message: "Thêm quản trị viên thành công!" }); // 201 là mã cho tạo mới
+                return res.status(201).json({ message: "Thêm quản trị viên thành công!" });
             } else {
                 return res.status(500).json({ message: "Thêm quản trị viên thất bại, không có hàng bị ảnh hưởng." });
             }
@@ -120,28 +118,25 @@ api.post('/payment', async (req, res) => {
     const axios = require('axios');
     const crypto = require('crypto');
 
-    // Thông tin cấu hình MoMo
     const accessKey = 'F8BBA842ECF85'; // Thay bằng access key thực tế
     const secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz'; // Thay bằng secret key thực tế
     const partnerCode = 'MOMO';
     const orderInfo = 'Thanh toán vé phim';
     const redirectUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b'; // Deep link của ứng dụng Android
     const ipnUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b'; // URL server để nhận thông báo từ MoMo
-    const requestType = 'payWithMethod'; 
+    const requestType = 'payWithMethod';
     const amount = req.body.amount || '50000'; // Lấy số tiền từ request hoặc mặc định
     const orderId = partnerCode + new Date().getTime();
     const requestId = orderId;
-    const extraData = ''; // Có thể thêm dữ liệu bổ sung nếu cần
+    const extraData = '';
     const lang = 'vi';
     const autoCapture = true;
 
-    // Tạo raw signature
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
     
     console.log("--------------------RAW SIGNATURE----------------");
     console.log(rawSignature);
 
-    // Tạo chữ ký HMAC SHA256
     const signature = crypto.createHmac('sha256', secretKey)
         .update(rawSignature)
         .digest('hex');
@@ -149,25 +144,23 @@ api.post('/payment', async (req, res) => {
     console.log("--------------------SIGNATURE----------------");
     console.log(signature);
 
-    // JSON gửi đến MoMo
     const requestBody = JSON.stringify({
-        partnerCode : partnerCode,
-        partnerName : "Test",
-        storeId : "MomoTestStore",
-        requestId : requestId,
-        amount : amount,
-        orderId : orderId,
-        orderInfo : orderInfo,
-        redirectUrl : redirectUrl,
-        ipnUrl : ipnUrl,
-        lang : lang,
-        requestType: requestType,
-        autoCapture: autoCapture,
-        extraData : extraData,
-        signature : signature
+        partnerCode,
+        partnerName: "Test",
+        storeId: "MomoTestStore",
+        requestId,
+        amount,
+        orderId,
+        orderInfo,
+        redirectUrl,
+        ipnUrl,
+        lang,
+        requestType,
+        autoCapture,
+        extraData,
+        signature
     });
 
-    // Gọi API MoMo
     const options = {
         method: 'POST',
         url: 'https://test-payment.momo.vn/v2/gateway/api/create',
@@ -180,7 +173,6 @@ api.post('/payment', async (req, res) => {
 
     try {
         const result = await axios(options);
-        // Trả về payUrl từ response của MoMo
         return res.status(200).json({ payUrl: result.data.payUrl, orderId });
     } catch (error) {
         console.error('Error calling MoMo API:', error.message);
@@ -191,29 +183,80 @@ api.post('/payment', async (req, res) => {
     }
 });
 
-api.get('/check-order-status', (req, res) => {
+api.get('/check-order-status', async (req, res) => {
     const orderId = req.query.orderId;
-    // Lấy trạng thái từ cơ sở dữ liệu
-    const status = getOrderStatusFromDB(orderId); // Hàm giả lập, thay bằng logic thực tế
+    const status = await getOrderStatusFromDB(orderId);
     res.json({ status });
 });
 
-function getOrderStatusFromDB(orderId) {
-    // Logic lấy trạng thái từ DB
-    return "SUCCESS"; // Giả lập, thay bằng dữ liệu thực tế
+async function getOrderStatusFromDB(orderId) {
+    try {
+        const [rows] = await db.query('SELECT payment_status FROM orders WHERE order_id = ?', [orderId]);
+        return rows.length > 0 ? rows[0].payment_status : "UNKNOWN";
+    } catch (error) {
+        console.error('Error querying order status:', error);
+        return "UNKNOWN";
+    }
 }
 
-api.get('/check-order-status', (req, res) => {
-    const orderId = req.query.orderId;
-    // Lấy trạng thái từ cơ sở dữ liệu
-    const status = getOrderStatusFromDB(orderId); // Hàm giả lập, thay bằng logic thực tế
-    res.json({ status });
+api.post('/save-payment-details', async (req, res) => {
+    const {
+        orderId,
+        selectedDeskIds,
+        totalAmount,
+        movieName,
+        screeningDateTime,
+        screenRoomName,
+        idUser,
+        idMethodPayment,
+        paymentSuccess
+    } = req.body;
+
+    try {
+        if (!orderId || !totalAmount || !idUser) {
+            return res.status(400).json({ message: "Thiếu thông tin yêu cầu (orderId, totalAmount, idUser)!" });
+        }
+
+        const deskIdsJson = JSON.stringify(selectedDeskIds || []);
+
+        const query = `
+            INSERT INTO orders (order_id, total_amount, movie_name, screening_datetime, screen_room_name, user_id, payment_method, payment_status, desk_ids, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE
+                total_amount = VALUES(total_amount),
+                movie_name = VALUES(movie_name),
+                screening_datetime = VALUES(screening_datetime),
+                screen_room_name = VALUES(screen_room_name),
+                user_id = VALUES(user_id),
+                payment_method = VALUES(payment_method),
+                payment_status = VALUES(payment_status),
+                desk_ids = VALUES(desk_ids),
+                updated_at = NOW()
+        `;
+        const values = [
+            orderId,
+            totalAmount,
+            movieName || 'N/A',
+            screeningDateTime || 'N/A',
+            screenRoomName || 'N/A',
+            idUser,
+            idMethodPayment || 'N/A',
+            paymentSuccess ? 'SUCCESS' : 'FAILED',
+            deskIdsJson
+        ];
+
+        const [result] = await db.query(query, values);
+
+        if (result.affectedRows > 0) {
+            return res.status(200).json({ message: "Lưu thông tin thanh toán thành công!", orderId });
+        } else {
+            return res.status(500).json({ message: "Lưu thông tin thất bại!" });
+        }
+    } catch (error) {
+        console.error('Lỗi lưu thông tin thanh toán:', error);
+        return res.status(500).json({ message: 'Lỗi server khi lưu thông tin thanh toán', error: error.message });
+    }
 });
-
-function getOrderStatusFromDB(orderId) {
-    // Logic lấy trạng thái từ DB
-    return "SUCCESS"; // Giả lập, thay bằng dữ liệu thực tế
-}
 
 api.listen(port, () => {
     console.log(`http://localhost:${port}`);
