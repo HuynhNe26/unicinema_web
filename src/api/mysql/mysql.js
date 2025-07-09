@@ -125,8 +125,8 @@ api.post('/payment', async (req, res) => {
     const secretKey = 'K951B6PE1waDMi640xX08PD3vg6EkVlz'; // Thay bằng secret key thực tế
     const partnerCode = 'MOMO';
     const orderInfo = 'Thanh toán vé phim';
-    const redirectUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b'; // Deep link của ứng dụng Android
-    const ipnUrl = 'https://webhook.site/b3088a6a-2d17-4f8d-a383-71389a6c600b'; // URL server để nhận thông báo từ MoMo
+    const redirectUrl = `unicinema://payment-result`; // Deep link của ứng dụng Android
+    const ipnUrl = `unicinema://payment-result`; // URL server để nhận thông báo từ MoMo
     const requestType = 'payWithMethod'; 
     const amount = req.body.amount || '50000'; // Lấy số tiền từ request hoặc mặc định
     const orderId = partnerCode + new Date().getTime();
@@ -134,6 +134,7 @@ api.post('/payment', async (req, res) => {
     const extraData = ''; // Có thể thêm dữ liệu bổ sung nếu cần
     const lang = 'vi';
     const autoCapture = true;
+    const user = '';
 
     // Tạo raw signature
     const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -164,7 +165,8 @@ api.post('/payment', async (req, res) => {
         requestType: requestType,
         autoCapture: autoCapture,
         extraData : extraData,
-        signature : signature
+        signature : signature,
+        user: user,
     });
 
     // Gọi API MoMo
@@ -181,7 +183,12 @@ api.post('/payment', async (req, res) => {
     try {
         const result = await axios(options);
         // Trả về payUrl từ response của MoMo
-        return res.status(200).json({ payUrl: result.data.payUrl, orderId });
+        return res.status(200).json({
+            payUrl: result.data.payUrl,
+            orderId,
+            amount // ← thêm dòng này
+        });
+
     } catch (error) {
         console.error('Error calling MoMo API:', error.message);
         return res.status(500).json({
@@ -191,29 +198,24 @@ api.post('/payment', async (req, res) => {
     }
 });
 
-api.get('/check-order-status', (req, res) => {
-    const orderId = req.query.orderId;
-    // Lấy trạng thái từ cơ sở dữ liệu
-    const status = getOrderStatusFromDB(orderId); // Hàm giả lập, thay bằng logic thực tế
-    res.json({ status });
+api.post('/payment/ipn', (req, res) => {
+    const data = req.body;
+
+    // TODO: Xác minh chữ ký MoMo để tránh giả mạo (sử dụng secretKey)
+    // Sau đó, cập nhật trạng thái đơn hàng trong DB
+
+    console.log("IPN từ MoMo:", data);
+
+    // Giả sử xử lý xong
+    res.status(200).send('IPN received');
 });
 
-function getOrderStatusFromDB(orderId) {
-    // Logic lấy trạng thái từ DB
-    return "SUCCESS"; // Giả lập, thay bằng dữ liệu thực tế
-}
 
-api.get('/check-order-status', (req, res) => {
+api.get('/payment/check-order-status', async (req, res) => {
     const orderId = req.query.orderId;
-    // Lấy trạng thái từ cơ sở dữ liệu
-    const status = getOrderStatusFromDB(orderId); // Hàm giả lập, thay bằng logic thực tế
-    res.json({ status });
+    // Kiểm tra order trong DB và trả về status
+    res.json({ status: "SUCCESS", orderId }); // hoặc FAILED, PENDING...
 });
-
-function getOrderStatusFromDB(orderId) {
-    // Logic lấy trạng thái từ DB
-    return "SUCCESS"; // Giả lập, thay bằng dữ liệu thực tế
-}
 
 api.listen(port, () => {
     console.log(`http://localhost:${port}`);

@@ -11,7 +11,7 @@ const CreateScreenRoom = () => {
     idScreenRoom: '',
     idTheater: '',
     nameScreenRoom: '',
-    quantityDesk: 140,
+    quantityDesk: 119,
     stateScreenRoom: '',
     active: true
   });
